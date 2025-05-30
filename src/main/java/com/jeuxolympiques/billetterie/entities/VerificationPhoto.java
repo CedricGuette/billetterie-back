@@ -1,6 +1,7 @@
 package com.jeuxolympiques.billetterie.entities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonView;
 import jakarta.persistence.*;
 import lombok.Data;
 import org.hibernate.annotations.UuidGenerator;
@@ -11,13 +12,19 @@ import java.time.LocalDateTime;
 @Table(name = "verification_photo")
 @Data
 public class VerificationPhoto {
+
+    @JsonView(Views.Moderator.class)
     @Id
     @UuidGenerator
     private String id;
+
+    @JsonView(Views.Moderator.class)
     private String url;
+
+    @JsonView(Views.Admin.class)
     private String verificationDate;
 
-    @JsonIgnore
+    @JsonView({Views.Moderator.class})
     @OneToOne(mappedBy = "verificationPhoto")
     private Customer customer;
 

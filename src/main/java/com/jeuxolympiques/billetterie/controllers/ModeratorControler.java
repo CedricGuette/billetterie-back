@@ -1,8 +1,10 @@
 package com.jeuxolympiques.billetterie.controllers;
 
+import com.fasterxml.jackson.annotation.JsonView;
 import com.jeuxolympiques.billetterie.configuration.HttpHeadersCORS;
 import com.jeuxolympiques.billetterie.configuration.JwtUtils;
 import com.jeuxolympiques.billetterie.entities.VerificationPhoto;
+import com.jeuxolympiques.billetterie.entities.Views;
 import com.jeuxolympiques.billetterie.services.ModeratorService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -24,6 +26,7 @@ public class ModeratorControler {
 
     @GetMapping
     @CrossOrigin(origins = "http://localhost:3000")
+    @JsonView(Views.Moderator.class)
     ResponseEntity<List<VerificationPhoto>> getAllVerificationPhoto() {
         // On appelle la fonction pour chercher toutes les photos depuis les services de Moderator
         return ResponseEntity.status(HttpStatus.OK).header(String.valueOf(httpHeaders.headers())).body(moderatorService.getAllVerificationPhoto());

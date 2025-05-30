@@ -1,10 +1,12 @@
 package com.jeuxolympiques.billetterie.controllers;
 
+import com.fasterxml.jackson.annotation.JsonView;
 import com.jeuxolympiques.billetterie.configuration.HttpHeadersCORS;
 import com.jeuxolympiques.billetterie.configuration.JwtUtils;
 import com.jeuxolympiques.billetterie.entities.Customer;
 import com.jeuxolympiques.billetterie.entities.Ticket;
 import com.jeuxolympiques.billetterie.entities.User;
+import com.jeuxolympiques.billetterie.entities.Views;
 import com.jeuxolympiques.billetterie.repositories.CustomerRepository;
 import com.jeuxolympiques.billetterie.repositories.TicketRepository;
 import com.jeuxolympiques.billetterie.repositories.UserRepository;
@@ -31,6 +33,7 @@ public class CustomerControler {
 
     @GetMapping()
     @CrossOrigin(origins = "http://localhost:3000")
+    @JsonView(Views.User.class)
     public ResponseEntity<?> retrieveCustomerInfo(@RequestHeader(name="Authorization") String token) {
         // On récupère l'information du token
         String username = jwtUtils.extractUsername(token.substring(7));

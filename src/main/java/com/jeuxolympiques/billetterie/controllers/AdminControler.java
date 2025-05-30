@@ -1,5 +1,6 @@
 package com.jeuxolympiques.billetterie.controllers;
 
+import com.fasterxml.jackson.annotation.JsonView;
 import com.jeuxolympiques.billetterie.configuration.HttpHeadersCORS;
 import com.jeuxolympiques.billetterie.configuration.JwtUtils;
 import com.jeuxolympiques.billetterie.entities.*;
@@ -37,6 +38,7 @@ public class AdminControler {
      */
     @GetMapping("/users")
     @CrossOrigin(origins = "http://localhost:3000")
+    @JsonView(Views.Admin.class)
     public ResponseEntity<List<User>> getAllUsers() {
         return ResponseEntity.status(HttpStatus.OK).header(String.valueOf(headersCORS.headers())).body(userService.getAllUsers());
     }
@@ -56,7 +58,7 @@ public class AdminControler {
                 response.add("Cet e-mail est déjà utilisé.");
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).header(String.valueOf(headersCORS.headers())).body(response);
             }
-            Moderator moderatorCreated = moderatorService.createModerator(moderator);
+            moderatorService.createModerator(moderator);
             response.add("Le modérateur a bien été créé.");
             return ResponseEntity.status(HttpStatus.CREATED).header(String.valueOf(headersCORS.headers())).body(response);
         }

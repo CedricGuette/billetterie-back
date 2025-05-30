@@ -39,6 +39,11 @@ public class SecurityService {
     * Cette méthode permet de vérifier la validité du QRcode présent sur le ticket
     */
     public Integer isThisTicketValid(String qrCode, String username) throws NoSuchAlgorithmException {
+
+        // Si le QR code renvoyé ne fait la bonne taille
+        if(qrCode.length() < 100 || qrCode.length() > 100) {
+            return 3;
+        }
         // On extrait les 36 premiers caractères qui correspondent à l'id du ticket
         String idFromQrCode = qrCode.substring(0, 36);
         String hashFromQrCode = qrCode.substring(36);

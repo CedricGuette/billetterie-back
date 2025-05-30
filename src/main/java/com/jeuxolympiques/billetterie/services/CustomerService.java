@@ -25,6 +25,7 @@ public class CustomerService {
     private final TicketRepository ticketRepository;
     private final VerificationPhotoService verificationPhotoService;
     private final TicketService ticketService;
+
     /*
      * Requête pour récupérer sous forme de list<> l'ensemble des clients
      */
@@ -62,7 +63,6 @@ public class CustomerService {
 
     public List<Ticket> listOfTicketsFromCustomersId(String id) {
         Optional<Customer> customer = customerRepository.findById(id);
-        List<Ticket> listOfTickets = customer.get().getTickets();
-        return listOfTickets;
+        return customer.get().getTickets();
     }
 }

@@ -1,10 +1,12 @@
 package com.jeuxolympiques.billetterie.controllers;
 
+import com.fasterxml.jackson.annotation.JsonView;
 import com.jeuxolympiques.billetterie.configuration.HttpHeadersCORS;
 import com.jeuxolympiques.billetterie.configuration.JwtUtils;
 import com.jeuxolympiques.billetterie.entities.Admin;
 import com.jeuxolympiques.billetterie.entities.Customer;
 import com.jeuxolympiques.billetterie.entities.User;
+import com.jeuxolympiques.billetterie.entities.Views;
 import com.jeuxolympiques.billetterie.repositories.UserRepository;
 import com.jeuxolympiques.billetterie.services.AdminService;
 import com.jeuxolympiques.billetterie.services.CustomerService;
@@ -21,6 +23,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.swing.text.View;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -71,6 +74,7 @@ public class AuthControler {
 
     @GetMapping("/level")
     @CrossOrigin(origins = "http://localhost:3000")
+    @JsonView(Views.UserRole.class)
     public ResponseEntity<List<String>> getAuthLevel(@RequestHeader(name="Authorization") String token) {
         List<String> role = new ArrayList<>();
         if (token.isEmpty()){
