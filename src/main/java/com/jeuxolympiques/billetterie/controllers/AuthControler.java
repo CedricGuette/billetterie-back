@@ -1,6 +1,7 @@
 package com.jeuxolympiques.billetterie.controllers;
 
 import com.fasterxml.jackson.annotation.JsonView;
+
 import com.jeuxolympiques.billetterie.configuration.HttpHeadersCORS;
 import com.jeuxolympiques.billetterie.configuration.JwtUtils;
 import com.jeuxolympiques.billetterie.entities.Admin;
@@ -10,8 +11,10 @@ import com.jeuxolympiques.billetterie.entities.Views;
 import com.jeuxolympiques.billetterie.repositories.UserRepository;
 import com.jeuxolympiques.billetterie.services.AdminService;
 import com.jeuxolympiques.billetterie.services.CustomerService;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -23,7 +26,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.swing.text.View;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -95,16 +97,28 @@ public class AuthControler {
     @CrossOrigin(origins = "http://localhost:3000")
     public ResponseEntity<List<String>> createAdmin(@RequestBody Admin admin) {
         List<String> response = new ArrayList<>();
+
+        // On vérifie que l'adresse mail n'est pas déjà utilisée
         if(userRepository.findByUsername(admin.getUsername()) != null) {
             response.add("Cet e-mail est déjà utilisé.");
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).header(String.valueOf(headersCORS.headers())).body(response);
         }
-        Admin adminCreated = adminService.createAdmin(admin);
-        if(adminCreated == null) {
+        adminService.createAdmin(admin);
+
+        // On vérifie qu'il n'y a pas déjà d'Admin
+        if(adminService.adminExist()) {
             response.add("Impossible de créer un deuxième administrateur.");
             return ResponseEntity.status(HttpStatus.CREATED).header(String.valueOf(headersCORS.headers())).body(response);
         }
+
+        // Si les conditions sont remplies on crée un admin
         response.add("L'administrateur a bien été créé.");
         return ResponseEntity.status(HttpStatus.CREATED).header(String.valueOf(headersCORS.headers())).body(response);
+    }
+
+    @GetMapping("/doAdminExist")
+    @CrossOrigin(origins = "http://localhost:3000")
+    public Boolean adminExist() {
+        return adminService.adminExist();
     }
 }
