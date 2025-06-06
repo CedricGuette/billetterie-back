@@ -44,6 +44,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth ->
                         auth.requestMatchers("api/auth/*").permitAll()
                                 .requestMatchers("/uploads/*","tickets/pdf/*").permitAll()
+                                .requestMatchers("api/stripe/checkout/*").permitAll()
+                                .requestMatchers("api/stripe/checkout/validation/**").permitAll()
                                 .requestMatchers("api/customers/*").hasRole("USER")
                                 .requestMatchers("api/moderators/*").hasRole("MODERATOR")
                                 .requestMatchers("api/admin/*").hasRole("ADMIN")

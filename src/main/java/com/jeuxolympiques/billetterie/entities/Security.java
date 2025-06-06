@@ -1,6 +1,5 @@
 package com.jeuxolympiques.billetterie.entities;
 
-import com.fasterxml.jackson.annotation.JsonView;
 import jakarta.persistence.*;
 
 import java.util.ArrayList;

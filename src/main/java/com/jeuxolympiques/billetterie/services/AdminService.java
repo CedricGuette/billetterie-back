@@ -1,7 +1,6 @@
 package com.jeuxolympiques.billetterie.services;
 
 import com.jeuxolympiques.billetterie.entities.Admin;
-import com.jeuxolympiques.billetterie.entities.User;
 import com.jeuxolympiques.billetterie.repositories.AdminRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -9,7 +8,6 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor

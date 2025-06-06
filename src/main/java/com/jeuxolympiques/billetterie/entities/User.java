@@ -1,6 +1,5 @@
 package com.jeuxolympiques.billetterie.entities;
 
-import com.fasterxml.jackson.annotation.JsonFilter;
 import com.fasterxml.jackson.annotation.JsonView;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;

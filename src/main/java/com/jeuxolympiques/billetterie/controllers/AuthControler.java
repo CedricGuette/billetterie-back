@@ -48,7 +48,7 @@ public class AuthControler {
 
     @PostMapping(path = "/register", consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
     @CrossOrigin(origins = "http://localhost:3000")
-    public ResponseEntity<?> register(@RequestPart Customer customer, @RequestPart("photo") MultipartFile imageFile) throws IOException {
+    public ResponseEntity<String> register(@RequestPart Customer customer, @RequestPart("photo") MultipartFile imageFile) throws IOException {
         if(userRepository.findByUsername(customer.getUsername()) != null) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).header(String.valueOf(headersCORS.headers())).body("Email déjà utilisé");
         }
@@ -103,15 +103,15 @@ public class AuthControler {
             response.add("Cet e-mail est déjà utilisé.");
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).header(String.valueOf(headersCORS.headers())).body(response);
         }
-        adminService.createAdmin(admin);
 
         // On vérifie qu'il n'y a pas déjà d'Admin
         if(adminService.adminExist()) {
             response.add("Impossible de créer un deuxième administrateur.");
-            return ResponseEntity.status(HttpStatus.CREATED).header(String.valueOf(headersCORS.headers())).body(response);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).header(String.valueOf(headersCORS.headers())).body(response);
         }
 
         // Si les conditions sont remplies on crée un admin
+        adminService.createAdmin(admin);
         response.add("L'administrateur a bien été créé.");
         return ResponseEntity.status(HttpStatus.CREATED).header(String.valueOf(headersCORS.headers())).body(response);
     }
