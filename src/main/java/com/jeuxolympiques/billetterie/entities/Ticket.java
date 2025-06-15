@@ -37,7 +37,7 @@ public class Ticket {
     @JsonView(Views.User.class)
     private String ticketUrl;
 
-    @JsonView(Views.User.class)
+    @JsonView({Views.User.class, Views.Admin.class})
     private String ticketCreatedDate;
 
     @JsonView(Views.Admin.class)

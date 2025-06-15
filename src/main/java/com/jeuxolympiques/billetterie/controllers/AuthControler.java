@@ -46,31 +46,65 @@ public class AuthControler {
     private final AuthenticationManager authenticationManager;
     private HttpHeadersCORS headersCORS = new HttpHeadersCORS();
 
+    /*
+     * Requête pour créer un compte et réserver sa place
+     */
     @PostMapping(path = "/register", consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
     @CrossOrigin(origins = "http://localhost:3000")
-    public ResponseEntity<String> register(@RequestPart Customer customer, @RequestPart("photo") MultipartFile imageFile) throws IOException {
+    public ResponseEntity<Map<String, String>> register(@RequestPart Customer customer, @RequestPart("photo") MultipartFile imageFile) throws IOException {
+
+        // On crée l'objet à envoyer en réponse
+        Map<String, String> response = new HashMap<>();
+
+        //On vérifie que l'email n'est pas déjà en base de données
         if(userRepository.findByUsername(customer.getUsername()) != null) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).header(String.valueOf(headersCORS.headers())).body("Email déjà utilisé");
+
+            response.put("error", "L'adresse e-mail est déjà utilisée.");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).header(String.valueOf(headersCORS.headers())).body(response);
         }
+
+        // Sinon on crée la réservation
         customerService.createCustomer(customer, passwordEncoder, imageFile);
-        return ResponseEntity.status(HttpStatus.CREATED).header(String.valueOf(headersCORS.headers())).body("La réservation a bien été créée");
+        response.put("created", "La réservation a bien été créée. Veuillez patienter le temps qu'un modérateur valide votre identité.");
+        return ResponseEntity.status(HttpStatus.CREATED).header(String.valueOf(headersCORS.headers())).body(response);
     }
 
+    /*
+     * Requête pour se connecter au service
+     */
     @PostMapping("/login")
     @CrossOrigin(origins = "http://localhost:3000")
-    public ResponseEntity<?> login(@RequestBody User user) {
+    public ResponseEntity<Map<String, ?>> login(@RequestBody User user) {
+
+        // On crée l'objet à envoyer en réponse
+        Map<String, String> response = new HashMap<>();
+
         try {
+            // On récupère les information d'authentification
             Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(user.getUsername(), user.getPassword()));
+
+            // Si les informations sont cohérentes
             if(authentication.isAuthenticated()) {
+
+                // On crée un token d'authentification
                 Map<String, Object> authData = new HashMap<>();
                 authData.put("token", jwtUtils.generateToken(user.getUsername()));
                 authData.put("type", "Bearer");
+
+                // On retourne le jeton
                 return ResponseEntity.status(HttpStatus.OK).header(String.valueOf(headersCORS.headers())).body(authData);
             }
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).header(String.valueOf(headersCORS.headers())).body("Invalid username or password");
+
+            // Sinon on renvoie une erreur
+            response.put("error", "Adresse e-mail ou mot de passe invalide.");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).header(String.valueOf(headersCORS.headers())).body(response);
+
         } catch (AuthenticationException e) {
+
+            // En cas d'exception on renvoie un message d'erreur et on log
+            response.put("error", "Adresse e-mail ou mot de passe invalide.");
             log.error(e.getMessage());
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).header(String.valueOf(headersCORS.headers())).body("Invalid username or password");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).header(String.valueOf(headersCORS.headers())).body(response);
         }
     }
 
@@ -93,29 +127,35 @@ public class AuthControler {
         return ResponseEntity.status(HttpStatus.OK).header(String.valueOf(headersCORS.headers())).body((role));
     }
 
+    /*
+    * Requête pour créer un administrateur
+    */
     @PostMapping("/createAdmin")
     @CrossOrigin(origins = "http://localhost:3000")
-    public ResponseEntity<List<String>> createAdmin(@RequestBody Admin admin) {
-        List<String> response = new ArrayList<>();
+    public ResponseEntity<Map<String, String>> createAdmin(@RequestBody Admin admin) {
+        Map<String, String> response = new HashMap<>();
 
         // On vérifie que l'adresse mail n'est pas déjà utilisée
         if(userRepository.findByUsername(admin.getUsername()) != null) {
-            response.add("Cet e-mail est déjà utilisé.");
+            response.put("error", "Cet e-mail est déjà utilisé.");
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).header(String.valueOf(headersCORS.headers())).body(response);
         }
 
         // On vérifie qu'il n'y a pas déjà d'Admin
         if(adminService.adminExist()) {
-            response.add("Impossible de créer un deuxième administrateur.");
+            response.put("error", "Impossible de créer un deuxième administrateur.");
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).header(String.valueOf(headersCORS.headers())).body(response);
         }
 
         // Si les conditions sont remplies on crée un admin
         adminService.createAdmin(admin);
-        response.add("L'administrateur a bien été créé.");
+        response.put("created", "L'administrateur a bien été créé.");
         return ResponseEntity.status(HttpStatus.CREATED).header(String.valueOf(headersCORS.headers())).body(response);
     }
 
+    /*
+    * Requête pour vérifier si un admin existe déjà ou pas pour afficher l'option de création
+    */
     @GetMapping("/doAdminExist")
     @CrossOrigin(origins = "http://localhost:3000")
     public Boolean adminExist() {

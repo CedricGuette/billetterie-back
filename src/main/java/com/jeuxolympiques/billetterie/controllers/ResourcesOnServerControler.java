@@ -15,6 +15,9 @@ import java.nio.file.Paths;
 @RequestMapping("")
 public class ResourcesOnServerControler {
 
+    /*
+    * Requête pour récupérer les photos de vérification
+    */
     @GetMapping("/uploads/{filename}")
     @CrossOrigin(origins = "http://localhost:3000")
     public ResponseEntity<Resource> getImage(@PathVariable String filename) {
@@ -34,9 +37,19 @@ public class ResourcesOnServerControler {
         }
     }
 
+    /*
+    * Requête pour récupérer les tickets en PDF
+    */
     @GetMapping("/tickets/pdf/{filename}")
     @CrossOrigin(origins = "http://localhost:3000")
     public ResponseEntity<Resource> getPdf(@PathVariable String filename) {
+
+        // Il faut que je récupère le token
+        // Puis je récupère l'utilisateur et ses tickets
+        // Je compare filename avec l'url des tickets
+        // Si ils correspondent je renvois le pdf
+        // Sinon je renvois une erreur
+
         try {
             Path filePath = Paths.get("src/main/resources/static/tickets/pdf/").resolve(filename);
             Resource resource = new UrlResource(filePath.toUri());

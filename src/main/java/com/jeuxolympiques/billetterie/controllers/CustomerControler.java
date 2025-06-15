@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonView;
 import com.jeuxolympiques.billetterie.configuration.HttpHeadersCORS;
 import com.jeuxolympiques.billetterie.configuration.JwtUtils;
 import com.jeuxolympiques.billetterie.entities.Customer;
-import com.jeuxolympiques.billetterie.entities.Ticket;
 import com.jeuxolympiques.billetterie.entities.User;
 import com.jeuxolympiques.billetterie.entities.Views;
 import com.jeuxolympiques.billetterie.repositories.CustomerRepository;
@@ -16,7 +15,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -31,63 +31,27 @@ public class CustomerControler {
     private final JwtUtils jwtUtils;
     private final HttpHeadersCORS httpHeaders = new HttpHeadersCORS();
 
+    /*
+    * Requête pour récupérer les informations du client connecté
+    */
     @GetMapping()
     @CrossOrigin(origins = "http://localhost:3000")
     @JsonView(Views.User.class)
     public ResponseEntity<?> retrieveCustomerInfo(@RequestHeader(name="Authorization") String token) {
-        // On récupère l'information du token
+
+        // On récupère l'information du token pour savoir quel utilisateur est connecté
         String username = jwtUtils.extractUsername(token.substring(7));
         User user = userRepository.findByUsername(username);
         Optional<Customer> customer = customerRepository.findById(user.getId());
 
+        // Si on trouve bien l'utilisateur en base de données
         if(customer.isPresent()) {
+            // On renvoit l'objet client pour remplir le profil utilisateur
             return ResponseEntity.status(HttpStatus.OK).header(String.valueOf(httpHeaders.headers())).body(customer);
         }
-
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).header(String.valueOf(httpHeaders.headers())).body("Utilisateur non trouvé.");
-    }
-
-    @GetMapping("/tickets")
-    @CrossOrigin(origins = "http://localhost:3000")
-    public ResponseEntity<?> getAllTickets(@RequestHeader(name="Authorization") String token) {
-        // On récupère l'information du token
-        String username = jwtUtils.extractUsername(token.substring(7));
-        User user = userRepository.findByUsername(username);
-
-        List<Ticket> listOfTicketsFromCustomersId;
-        listOfTicketsFromCustomersId = customerService.listOfTicketsFromCustomersId(user.getId());
-
-        // On vérifie qu'on a bien récupéré quelque chose
-        if(!listOfTicketsFromCustomersId.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.OK).header(String.valueOf(httpHeaders.headers())).body(listOfTicketsFromCustomersId);
-        }
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).header(String.valueOf(httpHeaders.headers())).body("Aucun ticket n'a été trouvé.");
-    }
-
-    @GetMapping("/cartprice/{id}")
-    @CrossOrigin(origins = "http://localhost:3000")
-    public ResponseEntity<?> cartPrice(@RequestHeader(name="Authorization") String token, @PathVariable String id) {
-        // On récupère l'information du token
-        String username = jwtUtils.extractUsername(token.substring(7));
-        User user = userRepository.findByUsername(username);
-        Optional<Ticket> ticket = ticketRepository.findById(id);
-
-        if(ticket.isPresent()) {
-            Optional<Customer> customer = customerRepository.findById(user.getId());
-
-            if (customer.isPresent()) {
-
-                if(!customer.get().getTickets().contains(ticket.get())){
-
-                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).header(String.valueOf(httpHeaders.headers())).body("La requête n'a pas put aller au bout.");
-                }
-
-                return ResponseEntity.status(HttpStatus.OK).header(String.valueOf(httpHeaders.headers())).body(ticket.get().getHowManyTickets());
-            }
-
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).header(String.valueOf(httpHeaders.headers())).body("La requête n'a pas put aller au bout.");
-        }
-
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).header(String.valueOf(httpHeaders.headers())).body("La requête n'a pas put aller au bout.");
+        // sinon on renvoie une erreur
+        Map<String, String> response = new HashMap<>();
+        response.put("error", "Utilisateur non trouvé.");
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).header(String.valueOf(httpHeaders.headers())).body(response);
     }
 }

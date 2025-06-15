@@ -7,6 +7,9 @@ import jakarta.persistence.Table;
 import lombok.Data;
 import org.hibernate.annotations.UuidGenerator;
 
+import javax.validation.constraints.Email;
+import javax.validation.constraints.Pattern;
+
 @Entity
 @Table(name = "users")
 @Data
@@ -17,6 +20,8 @@ public class User {
     @JsonView(Views.Admin.class)
     private String id;
 
+    @Email(regexp = "[a-z0-9._%+-]+@\\.[a-z]{2,3}",
+                      flags = Pattern.Flag.CASE_INSENSITIVE)
     @JsonView({Views.User.class, Views.Moderator.class, Views.Admin.class})
     private String username;
 

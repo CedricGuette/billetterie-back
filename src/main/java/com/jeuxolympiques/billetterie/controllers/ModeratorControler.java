@@ -12,8 +12,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/moderators")
@@ -24,34 +25,34 @@ public class ModeratorControler {
     private final JwtUtils jwtUtils;
     private final HttpHeadersCORS httpHeaders = new HttpHeadersCORS();
 
+    /*
+    * Requête pour récupérer l'ensemble des photos de vérifications et les données correspondantes
+    */
     @GetMapping
     @CrossOrigin(origins = "http://localhost:3000")
     @JsonView(Views.Moderator.class)
     ResponseEntity<List<VerificationPhoto>> getAllVerificationPhoto() {
+
         // On appelle la fonction pour chercher toutes les photos depuis les services de Moderator
         return ResponseEntity.status(HttpStatus.OK).header(String.valueOf(httpHeaders.headers())).body(moderatorService.getAllVerificationPhoto());
     }
 
-    @GetMapping("/{id}")
-    @CrossOrigin(origins = "http://localhost:3000")
-    ResponseEntity<?> getVerificationPhotoById(@PathVariable String id) {
-        // On cherche si la photo existe depuis les services de Moderator
-        Optional<VerificationPhoto> verificationPhoto = Optional.ofNullable(moderatorService.getVerificationPhotoById(id));
-        // Si la photo existe la sélectioner
-        if(verificationPhoto.isPresent()) {
-            return  ResponseEntity.status(HttpStatus.OK).header(String.valueOf(httpHeaders.headers())).body(verificationPhoto.get());
-        }
-        // Sinon renvoyer une erreur
-        return  ResponseEntity.status(HttpStatus.NOT_FOUND).header(String.valueOf(httpHeaders.headers())).body("La photo recherchée n'a pas été trouvée");
-    }
-
+    /*
+    * Requête pour valider une photo de vérification
+    */
     @PatchMapping("/{id}")
     @CrossOrigin(origins = "http://localhost:3000")
-    ResponseEntity<String> photoValidationById(@PathVariable String id, @RequestHeader(name="Authorization") String token) throws IOException {
+    ResponseEntity<Map<String, String>>photoValidationById(@PathVariable String id, @RequestHeader(name="Authorization") String token) throws IOException {
+        // On crée la variable qui va recevoir la réponse
+        Map<String, String> response = new HashMap<>();
+
+        // On récupère les informations par le token pour noter le modérateur qui valide la photo
         String username = jwtUtils.extractUsername(token.substring(7));
         if (moderatorService.photoValidationById(id, username)) {
-            return  ResponseEntity.status(HttpStatus.OK).header(String.valueOf(httpHeaders.headers())).body("La compte a bien été validé, la photo a été supprimée.");
+            response.put("validated", "La compte a bien été validé, la photo a été supprimée.");
+            return  ResponseEntity.status(HttpStatus.OK).header(String.valueOf(httpHeaders.headers())).body(response);
         }
-        return  ResponseEntity.status(HttpStatus.NOT_FOUND).header(String.valueOf(httpHeaders.headers())).body("Le compte n'a pas été trouvé.");
+        response.put("error", "Le compte n'a pas été trouvé.");
+        return  ResponseEntity.status(HttpStatus.NOT_FOUND).header(String.valueOf(httpHeaders.headers())).body(response);
     }
 }

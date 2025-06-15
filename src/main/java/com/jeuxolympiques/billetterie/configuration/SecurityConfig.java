@@ -43,14 +43,13 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth ->
                         auth.requestMatchers("api/auth/*").permitAll()
-                                .requestMatchers("/uploads/*","tickets/pdf/*").permitAll()
-                                .requestMatchers("api/stripe/checkout/*").permitAll()
-                                .requestMatchers("api/stripe/checkout/validation/**").permitAll()
+                                .requestMatchers("tickets/pdf/*").permitAll()
+                                .requestMatchers("api/stripe/checkout/*", "api/stripe/checkout/validation/**").hasRole("USER")
                                 .requestMatchers("api/customers/*").hasRole("USER")
+                                .requestMatchers("/uploads/*").hasRole("MODERATOR")
                                 .requestMatchers("api/moderators/*").hasRole("MODERATOR")
-                                .requestMatchers("api/admin/*").hasRole("ADMIN")
                                 .requestMatchers("api/security/*").hasRole("SECURITY")
-                                .requestMatchers("api/tickets/*").permitAll()//a changer en prod
+                                .requestMatchers("api/admin/*").hasRole("ADMIN")
                                 .anyRequest().authenticated())
                 .cors(Customizer.withDefaults())
                 .addFilterBefore(new JwtFilter(customUserDetailService, jwtUtils), UsernamePasswordAuthenticationFilter.class)

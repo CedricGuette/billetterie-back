@@ -14,9 +14,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @RestController
 @RequestMapping("/api/admin")
@@ -48,21 +46,28 @@ public class AdminControler {
      */
     @PostMapping("/createModerator")
     @CrossOrigin(origins = "http://localhost:3000")
-    public ResponseEntity<List<String>> createModerator(@RequestBody Moderator moderator,@RequestHeader(name="Authorization") String token) {
-        List<String> response = new ArrayList<>();
+    public ResponseEntity<Map<String, String>> createModerator(@RequestBody Moderator moderator,@RequestHeader(name="Authorization") String token) {
+
+        //On crée la varaible qui va recevoir la réponse
+        Map<String, String> response = new HashMap<>();
+
         // On récupère l'information du token
         String username = jwtUtils.extractUsername(token.substring(7));
         User user = userRepository.findByUsername(username);
+
+        // On vérifie le rôle de l'utilisateur
         if(user.getRole().equals("ROLE_ADMIN")){
+
+            // On vérifie que l'adresse mail n'est pas déjà utilisée
             if(userRepository.findByUsername(moderator.getUsername()) != null) {
-                response.add("Cet e-mail est déjà utilisé.");
+                response.put("error", "Cet e-mail est déjà utilisé.");
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).header(String.valueOf(headersCORS.headers())).body(response);
             }
             moderatorService.createModerator(moderator);
-            response.add("Le modérateur a bien été créé.");
+            response.put("created", "Le modérateur a bien été créé.");
             return ResponseEntity.status(HttpStatus.CREATED).header(String.valueOf(headersCORS.headers())).body(response);
         }
-        response.add(NOT_AUTHORIZED);
+        response.put("error", NOT_AUTHORIZED);
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).header(String.valueOf(headersCORS.headers())).body(response);
     }
 
@@ -71,50 +76,65 @@ public class AdminControler {
     */
     @PostMapping("/createSecurity")
     @CrossOrigin(origins = "http://localhost:3000")
-    public ResponseEntity<List<String>> createSecurity(@RequestBody Security security, @RequestHeader(name="Authorization") String token) {
-        List<String> response = new ArrayList<>();
+    public ResponseEntity<Map<String, String>> createSecurity(@RequestBody Security security, @RequestHeader(name="Authorization") String token) {
+
+        // On crée la variable qui va accueillir la réponse
+        Map<String, String> response = new HashMap<>();
+
         // On récupère l'information du token
         String username = jwtUtils.extractUsername(token.substring(7));
         User user = userRepository.findByUsername(username);
+
+        // On vérifie le rôle de l'utilisateur
         if(user.getRole().equals("ROLE_ADMIN")) {
             if(userRepository.findByUsername(security.getUsername()) != null) {
-                response.add("Cet e-mail est déjà utilisé.");
+                response.put("error", "Cet e-mail est déjà utilisé.");
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).header(String.valueOf(headersCORS.headers())).body(response);
             }
-            Security securityCreated = securityService.createSecurity(security);
-            response.add("L'agent de sécurité a bien été créé.");
+            securityService.createSecurity(security);
+            response.put("created", "L'agent de sécurité a bien été créé.");
             return ResponseEntity.status(HttpStatus.CREATED).header(String.valueOf(headersCORS.headers())).body(response);
         }
-        response.add(NOT_AUTHORIZED);
+        response.put("error", NOT_AUTHORIZED);
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).header(String.valueOf(headersCORS.headers())).body(response);
     }
 
     /*
-     * On crée la requête pour créer effacer un utilisateur
+     * On crée la requête pour effacer un utilisateur
      */
     @DeleteMapping("users/{id}")
     @CrossOrigin(origins = "http://localhost:3000")
-    public ResponseEntity<List<String>> deleteUserById (@PathVariable String id, @RequestHeader(name="Authorization") String token) {
-        List<String> response = new ArrayList<>();
+    public ResponseEntity<Map<String, String>> deleteUserById (@PathVariable String id, @RequestHeader(name="Authorization") String token) {
+        // On crée la variable qui va recevoir la réponse
+        Map<String, String> response = new HashMap<>();
+
+        // On vérifie le token récupéré pour extraire l'utilisateur
         String username = jwtUtils.extractUsername(token.substring(7));
         User user = userRepository.findByUsername(username);
+
+        // On vérifie le rôle de l'utilisateur
         if(user.getRole().equals("ROLE_ADMIN")) {
+
+            // On vérifie que l'utilisateur que l'on veut supprimer existe
             Optional<User> userToDelete = userRepository.findById(id);
             if(userToDelete.isPresent()) {
 
+                // Si l'utilisateur que l'on veut supprimer est un administrateur on renvoie une erreur
                 if(userToDelete.get().getRole().equals("ROLE_ADMIN")){
-                    response.add("Vous ne pouvez pas supprimer l'administrateur.");
+                    response.put("error", "Vous ne pouvez pas supprimer l'administrateur.");
                     return ResponseEntity.status(HttpStatus.BAD_REQUEST).header(String.valueOf(headersCORS.headers())).body(response);
                 }
 
+                // Sinon on supprime
                 userRepository.delete(userToDelete.get());
-                response.add("L'utilisateur a bien été supprimé.");
+                response.put("deleted", "L'utilisateur a bien été supprimé.");
                 return ResponseEntity.status(HttpStatus.OK).header(String.valueOf(headersCORS.headers())).body(response);
             }
-            response.add("Impossible de trouver l'utilisateur.");
+
+            response.put("error", "Impossible de trouver l'utilisateur.");
             return ResponseEntity.status(HttpStatus.NOT_FOUND).header(String.valueOf(headersCORS.headers())).body(response);
         }
-        response.add(NOT_AUTHORIZED);
+        response.put("error", NOT_AUTHORIZED);
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).header(String.valueOf(headersCORS.headers())).body(response);
     }
 }

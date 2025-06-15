@@ -2,6 +2,9 @@ package com.jeuxolympiques.billetterie.configuration;
 
 import org.springframework.http.HttpHeaders;
 
+/*
+* Objet qui se charge d'écrire les en-têtes des réponses afin de ne pas avoir d'erreur CORS
+*/
 public class HttpHeadersCORS {
     public HttpHeaders headers() {
         HttpHeaders httpHeader = new HttpHeaders();

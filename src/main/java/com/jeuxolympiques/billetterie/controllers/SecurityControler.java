@@ -9,8 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/security")
@@ -21,29 +20,18 @@ public class SecurityControler {
     private final JwtUtils jwtUtils;
     private HttpHeadersCORS headersCORS = new HttpHeadersCORS();
 
+    /*
+    *  Requête pour vérifier et valider un ticket
+    */
     @GetMapping("/{ticketCode}")
     @CrossOrigin(origins = "http://localhost:3000")
-    public ResponseEntity<List<String>> isTicketValid(@PathVariable String ticketCode, @RequestHeader(name="Authorization") String token) throws NoSuchAlgorithmException {
+    public ResponseEntity<Map<String, String>> isTicketValid(@PathVariable String ticketCode, @RequestHeader(name="Authorization") String token) throws NoSuchAlgorithmException {
+
+        // On récupère les information de l'agent de sécurité qui scan
         String username = jwtUtils.extractUsername(token.substring(7));
-        Integer responseCode = securityService.isThisTicketValid(ticketCode, username);
-        List<String> response = new ArrayList<>();
-        switch (responseCode) {
-            // Le billet est valide et non utilisé
-            case 0 :
-                response.add("Le ticket est validé !");
-                return ResponseEntity.status(HttpStatus.OK).header(String.valueOf(headersCORS.headers())).body(response);
-            // le billet est valide mais a déjà été utilisé
-            case 1:
-                response.add("Le ticket a déjà été utilisé");
-                return ResponseEntity.status(HttpStatus.OK).header(String.valueOf(headersCORS.headers())).body(response);
-            // l'identifiant et le hash ne sont pas en accord
-            case 2:
-                response.add("L'identifiant ne correspond pas avec le reste du code");
-                return ResponseEntity.status(HttpStatus.OK).header(String.valueOf(headersCORS.headers())).body(response);
-            //L'identifiant est introuvable dans la base de données
-            default:
-                response.add("L'identifiant ne correspond à aucun élément connu");
-                return ResponseEntity.status(HttpStatus.OK).header(String.valueOf(headersCORS.headers())).body(response);
-        }
+
+        // On démande au service de comparer les informations et de renvoyer la réponse
+        Map<String, String> response = securityService.isThisTicketValid(ticketCode, username);
+        return ResponseEntity.status(HttpStatus.OK).header(String.valueOf(headersCORS.headers())).body(response);
     }
 }

@@ -42,8 +42,9 @@ public class CheckoutController {
     private final JwtUtils jwtUtils;
     private HttpHeadersCORS httpHeaders = new HttpHeadersCORS();
 
-
-
+    /*
+    * Requête pour lancer une session de paiement Stripe
+    */
     @PostMapping("/checkout/{id}")
     @CrossOrigin(origins = "http://localhost:3000")
     public ResponseEntity<Map<String, String>> checkout(@RequestHeader(name="Authorization") String token, @PathVariable String id) throws StripeException {
@@ -87,7 +88,7 @@ public class CheckoutController {
 
             // On nomme le ticket
             SessionCreateParams.LineItem.PriceData.ProductData productData = SessionCreateParams.LineItem.PriceData.ProductData.builder()
-                    .setName("Ticket numéro: " + ticket.get().getId())
+                    .setName("Ticket numéro: " + ticket.get().getId() + " " + ticket.get().getCustomer().getFirstName() + " " + ticket.get().getCustomer().getLastName())
                     .build();
 
             // On donne une valeur au ticket
@@ -114,6 +115,9 @@ public class CheckoutController {
 
             Session session = Session.create(params);
 
+            //ticket.get().setSessionId(session.getId()); => dans la BDD
+            //ticketRepository.save(ticket);
+
             // On insert les élément de la réponse à la requête
             response.put("checkoutSessionClientSecret", session.getClientSecret());
 
@@ -125,6 +129,9 @@ public class CheckoutController {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).header(String.valueOf(httpHeaders.headers())).body(response);
     }
 
+    /*
+    * Requête pour vérifier que le paiement a bien été exécuté et donc pour lancer la conception du ticket
+    */
     @GetMapping("checkout/validation/{sessionId}/{ticketId}")
     @CrossOrigin(origins = "http://localhost:3000")
     public ResponseEntity<Map<String, String>> isCheckoutOk(@RequestHeader(name="Authorization") String token,
