@@ -43,9 +43,8 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth ->
                         auth.requestMatchers("api/auth/*").permitAll()
-                                .requestMatchers("tickets/pdf/*").permitAll()
                                 .requestMatchers("api/stripe/checkout/*", "api/stripe/checkout/validation/**").hasRole("USER")
-                                .requestMatchers("api/customers/*").hasRole("USER")
+                                .requestMatchers("api/customers/*", "tickets/pdf/*").hasRole("USER")
                                 .requestMatchers("/uploads/*").hasRole("MODERATOR")
                                 .requestMatchers("api/moderators/*").hasRole("MODERATOR")
                                 .requestMatchers("api/security/*").hasRole("SECURITY")

@@ -108,23 +108,36 @@ public class AuthControler {
         }
     }
 
+    /*
+    * Requête pour récupérer le niveau d'accès d'un utilisateur
+    */
     @GetMapping("/level")
     @CrossOrigin(origins = "http://localhost:3000")
     @JsonView(Views.UserRole.class)
-    public ResponseEntity<List<String>> getAuthLevel(@RequestHeader(name="Authorization") String token) {
-        List<String> role = new ArrayList<>();
+    public ResponseEntity<Map<String, String>> getAuthLevel(@RequestHeader(name="Authorization") String token) {
+
+        // On crée la réponse à renvoyer
+        Map<String, String> response = new HashMap();
+
+        // S'il n'y a pas de token, on renvoie une réponse par défaut
         if (token.isEmpty()){
-            role.add("ROLE_UNKNOWN");
-            return ResponseEntity.status(HttpStatus.OK).header(String.valueOf(headersCORS.headers())).body(role);
+            response.put("role", "ROLE_UNKNOWN");
+            return ResponseEntity.status(HttpStatus.OK).header(String.valueOf(headersCORS.headers())).body(response);
         }
+
+        // On vérifie l'information de rôle à partir du token
         String username = jwtUtils.extractUsername(token.substring(7));
         User user = userRepository.findByUsername(username);
+
+        // Si l'utilisateur existe
         if(user != null) {
-            role.add(user.getRole());
-            return ResponseEntity.status(HttpStatus.OK).header(String.valueOf(headersCORS.headers())).body(role);
+            response.put("role", user.getRole());
+            return ResponseEntity.status(HttpStatus.OK).header(String.valueOf(headersCORS.headers())).body(response);
         }
-        role.add("ROLE_UNKNOWN");
-        return ResponseEntity.status(HttpStatus.OK).header(String.valueOf(headersCORS.headers())).body((role));
+
+        // Si l'utilisateur n'est pas trouvé on renvoie une erreur
+        response.put("error", "Votre session présente un problème veuillez vous reconnecter, merci.");
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).header(String.valueOf(headersCORS.headers())).body((response));
     }
 
     /*

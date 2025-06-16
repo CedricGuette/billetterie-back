@@ -22,21 +22,26 @@ public class JwtFilter extends OncePerRequestFilter {
     private final CustomUserDetailService customUserDetailService;
     private final JwtUtils jwtUtils;
 
+    // On crée un filtre pour donner des accès en fonction du token
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+        // On récupère le token dans les requêtes
         final String authHeader = request.getHeader("Authorization");
 
         String username = null;
         String jwt = null;
 
+        // On vérifie que le token est bien un Bearer
         if(authHeader != null && authHeader.startsWith("Bearer ")) {
             jwt = authHeader.substring(7);
             username = jwtUtils.extractUsername(jwt);
         }
 
+        // On vérifie de la cohérence des donées portées dans le token
         if(username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             UserDetails userDetails = customUserDetailService.loadUserByUsername(username);
 
+            // Si notre JwtUtils confirme les informations du token on donne accès
             if(jwtUtils.validateToken(jwt, userDetails)) {
                 UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
                 authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
