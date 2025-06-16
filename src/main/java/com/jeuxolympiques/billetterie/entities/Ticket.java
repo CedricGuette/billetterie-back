@@ -38,10 +38,10 @@ public class Ticket {
     private String ticketUrl;
 
     @JsonView({Views.User.class, Views.Admin.class})
-    private String ticketCreatedDate;
+    private LocalDateTime ticketCreatedDate;
 
     @JsonView(Views.Admin.class)
-    private String ticketValidationDate;
+    private LocalDateTime ticketValidationDate;
 
     @JsonView(Views.Admin.class)
     @ManyToOne(cascade = CascadeType.ALL)

@@ -24,8 +24,7 @@ public class AdminService {
             return null;
         }
         admin.setPassword(passwordEncoder.encode(admin.getPassword()));
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy hh:mm");
-        admin.setCreatedDate(LocalDateTime.now().format(formatter));
+        admin.setCreatedDate(LocalDateTime.now());
         admin.setRole("ROLE_ADMIN");
         return adminRepository.save(admin);
     }

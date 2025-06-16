@@ -9,6 +9,7 @@ import org.hibernate.annotations.UuidGenerator;
 
 import javax.validation.constraints.Email;
 import javax.validation.constraints.Pattern;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "users")
@@ -31,6 +32,6 @@ public class User {
     private String role;
 
     @JsonView({Views.User.class, Views.Moderator.class, Views.Admin.class})
-    private String createdDate;
+    private LocalDateTime createdDate;
 
 }

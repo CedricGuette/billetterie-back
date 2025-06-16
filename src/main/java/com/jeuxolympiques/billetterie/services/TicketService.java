@@ -146,8 +146,7 @@ public class TicketService {
                 document.add(new Paragraph(name));
                 // On met à jour les informations dans la base de données
                 ticketToPdf.setTicketUrl(documentOnServer + fileName);
-                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy hh:mm");
-                ticketToPdf.setTicketCreatedDate(LocalDateTime.now().format(formatter));
+                ticketToPdf.setTicketCreatedDate(LocalDateTime.now());
 
                 // On supprime le QRcode une fois terminé
                 Path qrToDeletePath = Paths.get(imageUrl);

@@ -22,7 +22,7 @@ public class VerificationPhoto {
     private String url;
 
     @JsonView(Views.Admin.class)
-    private String verificationDate;
+    private LocalDateTime verificationDate;
 
     @JsonView({Views.Moderator.class})
     @OneToOne(mappedBy = "verificationPhoto")

@@ -36,8 +36,7 @@ public class ModeratorService {
     */
     public Moderator createModerator (Moderator moderator) {
         moderator.setPassword(passwordEncoder.encode(moderator.getPassword()));
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy hh:mm");
-        moderator.setCreatedDate(LocalDateTime.now().format(formatter));
+        moderator.setCreatedDate(LocalDateTime.now());
         moderator.setRole("ROLE_MODERATOR");
         return moderatorRepository.save(moderator);
     }
@@ -83,8 +82,7 @@ public class ModeratorService {
 
             // On supprime l'url de la photo de verification
             existingVerificationPhoto.setUrl(null);
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy hh:mm");
-            existingVerificationPhoto.setVerificationDate(LocalDateTime.now().format(formatter));
+            existingVerificationPhoto.setVerificationDate(LocalDateTime.now());
 
             User user = userRepository.findByUsername(username);
             Optional<Moderator> moderator = moderatorRepository.findById(user.getId());

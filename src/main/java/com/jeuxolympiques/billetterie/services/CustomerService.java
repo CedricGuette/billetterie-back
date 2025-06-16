@@ -45,8 +45,7 @@ public class CustomerService {
     public Customer createCustomer(Customer customer, PasswordEncoder passwordEncoder, MultipartFile imageFile) throws IOException {
         // On appelle le service d'upload des services de VerificationPhoto
         customer.setPassword(passwordEncoder.encode(customer.getPassword()));
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy hh:mm");
-        customer.setCreatedDate(LocalDateTime.now().format(formatter));
+        customer.setCreatedDate(LocalDateTime.now());
         customer.setCustomerKey(null);
         customer.setProfileIsValidate(false);
         customer.setRole("ROLE_USER");

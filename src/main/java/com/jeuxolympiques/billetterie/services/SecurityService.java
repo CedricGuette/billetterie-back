@@ -31,8 +31,7 @@ public class SecurityService {
      */
     public Security createSecurity (Security security) {
         security.setPassword(passwordEncoder.encode(security.getPassword()));
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy hh:mm");
-        security.setCreatedDate(LocalDateTime.now().format(formatter));
+        security.setCreatedDate(LocalDateTime.now());
         security.setRole("ROLE_SECURITY");
         return securityRepository.save(security);
     }
@@ -78,8 +77,7 @@ public class SecurityService {
 
                     // Si le ticket est encore valable, on met l'information à jour dans la base de données
                     ticketExist.setTicketIsUsed(true);
-                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy hh:mm");
-                    ticketExist.setTicketValidationDate(LocalDateTime.now().format(formatter));
+                    ticketExist.setTicketValidationDate(LocalDateTime.now());
 
                     // On récupère les information de l'agent de sécurité depuis l'username
                     User user = userRepository.findByUsername(username);
