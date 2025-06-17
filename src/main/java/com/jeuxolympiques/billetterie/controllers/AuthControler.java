@@ -56,6 +56,8 @@ public class AuthControler {
         // On crée l'objet à envoyer en réponse
         Map<String, String> response = new HashMap<>();
 
+        customer.setUsername(customer.getUsername().toLowerCase());
+
         //On vérifie que l'email n'est pas déjà en base de données
         if(userRepository.findByUsername(customer.getUsername()) != null) {
 
@@ -76,6 +78,7 @@ public class AuthControler {
     @CrossOrigin(origins = "http://localhost:3000")
     public ResponseEntity<Map<String, ?>> login(@RequestBody User user) {
 
+        user.setUsername(user.getUsername().toLowerCase());
         // On crée l'objet à envoyer en réponse
         Map<String, String> response = new HashMap<>();
 
