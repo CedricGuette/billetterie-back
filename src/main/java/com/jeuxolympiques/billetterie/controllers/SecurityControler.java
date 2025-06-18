@@ -4,6 +4,8 @@ import com.jeuxolympiques.billetterie.configuration.HttpHeadersCORS;
 import com.jeuxolympiques.billetterie.configuration.JwtUtils;
 import com.jeuxolympiques.billetterie.services.SecurityService;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,7 +20,10 @@ public class SecurityControler {
 
     private final SecurityService securityService;
     private final JwtUtils jwtUtils;
-    private HttpHeadersCORS headersCORS = new HttpHeadersCORS();
+    private final HttpHeadersCORS headersCORS = new HttpHeadersCORS();
+    private static final Logger logger = LoggerFactory.getLogger(SecurityControler.class);
+
+    private static final String SECURITY_SCAN = "Un agent de sécurité a scanné une place";
 
     /*
     *  Requête pour vérifier et valider un ticket
@@ -32,6 +37,11 @@ public class SecurityControler {
 
         // On démande au service de comparer les informations et de renvoyer la réponse
         Map<String, String> response = securityService.isThisTicketValid(ticketCode, username);
-        return ResponseEntity.status(HttpStatus.OK).header(String.valueOf(headersCORS.headers())).body(response);
+        logger.info(SECURITY_SCAN);
+
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .header(String.valueOf(headersCORS.headers()))
+                .body(response);
     }
 }

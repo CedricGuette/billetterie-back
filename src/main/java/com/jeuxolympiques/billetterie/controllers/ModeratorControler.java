@@ -7,6 +7,8 @@ import com.jeuxolympiques.billetterie.entities.VerificationPhoto;
 import com.jeuxolympiques.billetterie.entities.Views;
 import com.jeuxolympiques.billetterie.services.ModeratorService;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -24,6 +26,14 @@ public class ModeratorControler {
     private final ModeratorService moderatorService;
     private final JwtUtils jwtUtils;
     private final HttpHeadersCORS httpHeaders = new HttpHeadersCORS();
+    private static final Logger logger = LoggerFactory.getLogger(ModeratorControler.class);
+
+    // On met les réponses dans des variables
+    private static final String VALIDATED = "La compte a bien été validé, la photo a été supprimée.";
+    private static final String USER_NOT_FOUND = "Le compte n'a pas été trouvé.";
+
+    private static final String ERRORJSON = "error";
+    private static final String VALIDATEDJSON = "validated";
 
     /*
     * Requête pour récupérer l'ensemble des photos de vérifications et les données correspondantes
@@ -48,11 +58,21 @@ public class ModeratorControler {
 
         // On récupère les informations par le token pour noter le modérateur qui valide la photo
         String username = jwtUtils.extractUsername(token.substring(7));
-        if (moderatorService.photoValidationById(id, username)) {
-            response.put("validated", "La compte a bien été validé, la photo a été supprimée.");
-            return  ResponseEntity.status(HttpStatus.OK).header(String.valueOf(httpHeaders.headers())).body(response);
+        if (Boolean.TRUE.equals(moderatorService.photoValidationById(id, username))) {
+            response.put(VALIDATEDJSON, VALIDATED);
+            logger.info(VALIDATED);
+
+            return  ResponseEntity
+                    .status(HttpStatus.OK)
+                    .header(String.valueOf(httpHeaders.headers()))
+                    .body(response);
         }
-        response.put("error", "Le compte n'a pas été trouvé.");
-        return  ResponseEntity.status(HttpStatus.NOT_FOUND).header(String.valueOf(httpHeaders.headers())).body(response);
+        response.put(ERRORJSON, USER_NOT_FOUND);
+        logger.error(USER_NOT_FOUND);
+
+        return  ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .header(String.valueOf(httpHeaders.headers()))
+                .body(response);
     }
 }

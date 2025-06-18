@@ -7,10 +7,11 @@ import com.jeuxolympiques.billetterie.entities.Customer;
 import com.jeuxolympiques.billetterie.entities.User;
 import com.jeuxolympiques.billetterie.entities.Views;
 import com.jeuxolympiques.billetterie.repositories.CustomerRepository;
-import com.jeuxolympiques.billetterie.repositories.TicketRepository;
 import com.jeuxolympiques.billetterie.repositories.UserRepository;
-import com.jeuxolympiques.billetterie.services.CustomerService;
+
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -26,10 +27,17 @@ public class CustomerControler {
 
     private final CustomerRepository customerRepository;
     private final UserRepository userRepository;
-    private final TicketRepository ticketRepository;
-    private final CustomerService customerService;
+
     private final JwtUtils jwtUtils;
     private final HttpHeadersCORS httpHeaders = new HttpHeadersCORS();
+    private static final Logger logger = LoggerFactory.getLogger(CustomerControler.class);
+
+    // On met les réponses dans des variables
+    private static final String ERRORJSON = "error";
+    private static final String USER_NOT_FOUND = "Utilisateur non trouvé.";
+
+    private static final String CUSTOMER_CONNECTED = "Un client est connecté.";
+    private static final String USER_NOT_FOUND_LOGGER = "Un utilisateur n'existant pas a été demandé.";
 
     /*
     * Requête pour récupérer les informations du client connecté
@@ -47,11 +55,21 @@ public class CustomerControler {
         // Si on trouve bien l'utilisateur en base de données
         if(customer.isPresent()) {
             // On renvoit l'objet client pour remplir le profil utilisateur
-            return ResponseEntity.status(HttpStatus.OK).header(String.valueOf(httpHeaders.headers())).body(customer);
+            logger.info(CUSTOMER_CONNECTED);
+
+            return ResponseEntity
+                    .status(HttpStatus.OK)
+                    .header(String.valueOf(httpHeaders.headers()))
+                    .body(customer);
         }
         // sinon on renvoie une erreur
         Map<String, String> response = new HashMap<>();
-        response.put("error", "Utilisateur non trouvé.");
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).header(String.valueOf(httpHeaders.headers())).body(response);
+        response.put(ERRORJSON, USER_NOT_FOUND);
+        logger.error(USER_NOT_FOUND_LOGGER);
+
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .header(String.valueOf(httpHeaders.headers()))
+                .body(response);
     }
 }

@@ -8,6 +8,8 @@ import com.jeuxolympiques.billetterie.entities.User;
 import com.jeuxolympiques.billetterie.repositories.CustomerRepository;
 import com.jeuxolympiques.billetterie.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpStatus;
@@ -27,10 +29,15 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ResourcesOnServerControler {
 
-    private final JwtUtils jwtUtils ;
-    private HttpHeadersCORS headersCORS = new HttpHeadersCORS();
     private final CustomerRepository customerRepository;
     private final UserRepository userRepository;
+
+    private final JwtUtils jwtUtils ;
+    private final HttpHeadersCORS headersCORS = new HttpHeadersCORS();
+    private static final Logger logger = LoggerFactory.getLogger(ResourcesOnServerControler.class);
+
+    private static final String UNAUTHORIZED_PDF = "Quelqu'un essaie d'accèder à un ticket en pdf sans l'autorisation.";
+    private static final String NOT_FOUND_PDF = "Quelqu'un cherche un ticket en pdf qui n'existe pas.";
 
     /*
     * Requête pour récupérer les photos de vérification
@@ -43,14 +50,25 @@ public class ResourcesOnServerControler {
             Resource resource = new UrlResource(filePath.toUri());
 
             if (resource.exists()) {
+
                 return ResponseEntity.ok()
                         .contentType(MediaType.IMAGE_JPEG)
+                        .header(String.valueOf(headersCORS.headers()))
                         .body(resource);
             } else {
-                return ResponseEntity.notFound().build();
+
+                return ResponseEntity
+                        .notFound()
+                        .header(String.valueOf(headersCORS.headers()))
+                        .build();
             }
         } catch (MalformedURLException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            logger.error(e.getMessage());
+
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .header(String.valueOf(headersCORS.headers()))
+                    .build();
         }
     }
 
@@ -73,8 +91,8 @@ public class ResourcesOnServerControler {
             List<Ticket> tickets = customer.get().getTickets();
 
             List<Ticket> result = tickets.stream()
-                    .filter(ticket -> ticket.getTicketUrl().equals("tickets/pdf/" + filename))
-                    .collect(Collectors.toList());
+                    .filter(ticket -> ticket.getTicketUrl().equals(STR."tickets/pdf/\{filename}"))
+                    .toList();
 
             if(!(result.isEmpty())) {
 
@@ -84,20 +102,40 @@ public class ResourcesOnServerControler {
                     Resource resource = new UrlResource(filePath.toUri());
 
                     if (resource.exists()) {
-                        return ResponseEntity.ok()
+
+                        return ResponseEntity
+                                .ok()
                                 .contentType(MediaType.APPLICATION_PDF)
+                                .header(String.valueOf(headersCORS.headers()))
                                 .body(resource);
                     } else {
-                        return ResponseEntity.notFound().build();
+
+                        return ResponseEntity
+                                .notFound()
+                                .header(String.valueOf(headersCORS.headers()))
+                                .build();
                     }
                 } catch (MalformedURLException e) {
-                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).header(String.valueOf(headersCORS.headers())).build();
+                    logger.error(e.getMessage());
+
+                    return ResponseEntity
+                            .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                            .header(String.valueOf(headersCORS.headers()))
+                            .build();
                 }
             }
+            logger.error(UNAUTHORIZED_PDF);
 
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).header(String.valueOf(headersCORS.headers())).build();
+            return ResponseEntity
+                    .status(HttpStatus.UNAUTHORIZED)
+                    .header(String.valueOf(headersCORS.headers()))
+                    .build();
         }
+        logger.error(NOT_FOUND_PDF);
 
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).header(String.valueOf(headersCORS.headers())).build();
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .header(String.valueOf(headersCORS.headers()))
+                .build();
     }
 }

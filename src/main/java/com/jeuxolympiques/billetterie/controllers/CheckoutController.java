@@ -7,14 +7,12 @@ import com.jeuxolympiques.billetterie.entities.Ticket;
 import com.jeuxolympiques.billetterie.entities.User;
 import com.jeuxolympiques.billetterie.repositories.TicketRepository;
 import com.jeuxolympiques.billetterie.repositories.UserRepository;
+import com.jeuxolympiques.billetterie.services.CheckoutService;
 import com.jeuxolympiques.billetterie.services.TicketService;
-import com.stripe.Stripe;
 import com.stripe.exception.StripeException;
-import com.stripe.model.checkout.Session;
-import com.stripe.param.checkout.SessionCreateParams;
-import com.stripe.param.checkout.SessionRetrieveParams;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -30,17 +28,29 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class CheckoutController {
 
-    @Value("${STRIPE_SECRET_KEY}")
-    private String stripeSecretKey;
-
-    @Value("${URL_FRONT}")
-    private String urlFront;
 
     private final TicketRepository ticketRepository;
     private final UserRepository userRepository;
+
+    private final CheckoutService checkoutService;
     private final TicketService ticketService;
     private final JwtUtils jwtUtils;
-    private HttpHeadersCORS httpHeaders = new HttpHeadersCORS();
+    private final HttpHeadersCORS httpHeaders = new HttpHeadersCORS();
+    private static final Logger logger = LoggerFactory.getLogger(CheckoutController.class);
+
+    // On met les réponses dans des variables
+    private static final String TICKET_NOT_FOUND = "Le ticket n'a pas été trouvé dans la base de données.";
+    private static final String TICKET_AND_USER_DONT_MATCH = "Le ticket et l'utilisateur ne correspondent pas.";
+
+    private static final String ERRORJSON = "error";
+
+    private static final String SESSION_CREATED = "Une session de paiement Stripe a bien été créée.";
+    private static final String NOT_PAYED = "Le paiement du ticket n'a pas été effectué.";
+    private static final String PAYED = "Le ticket a bien été payé.";
+    private static final String TICKET_NOT_FOUND_CREATE_SESSION = "Le ticket n'a pas été trouvé dans la base de données lors de la création de session de paiement.";
+    private static final String TICKET_NOT_FOUND_CHECK_PAYED = "Le ticket n'a pas été trouvé dans la base de données lors de la vérification de paiement.";
+    private static final String TICKET_AND_USER_DONT_MATCH_CREATE_SESSION = "Le ticket et l'utilisateur ne correspondent pas lors de la création de session de paiement.";
+    private static final String TICKET_AND_USER_DONT_MATCH_CHECK_PAYED = "Le ticket et l'utilisateur ne correspondent pas lors de la vérification de paiement.";
 
     /*
     * Requête pour lancer une session de paiement Stripe
@@ -48,9 +58,6 @@ public class CheckoutController {
     @PostMapping("/checkout/{id}")
     @CrossOrigin(origins = "http://localhost:3000")
     public ResponseEntity<Map<String, String>> checkout(@RequestHeader(name="Authorization") String token, @PathVariable String id) throws StripeException {
-
-        // On initialise Stripe avec la clef
-        Stripe.apiKey = stripeSecretKey;
 
         // On récupère l'information du token
         String username = jwtUtils.extractUsername(token.substring(7));
@@ -63,70 +70,32 @@ public class CheckoutController {
         // On crée le corps de la réponse
         Map<String, String> response = new HashMap<>();
 
-        // On vérifie la cohérence des informations
-        if(!ticket.get().getCustomer().getId().equals(user.getId())) {
-            response.put("error", "Le numéro de ticket et l'utilisateur ne correspondent pas");
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).header(String.valueOf(httpHeaders.headers())).body(response);
-        }
 
-        // Si le ticket existe
-        if(ticket.isPresent()) {
-            int amount;
-            switch (ticket.get().getHowManyTickets()) {
-                case 1 : amount = 5000;
-                break;
+        if(ticket.isPresent()){
 
-                case 2 : amount = 9000;
-                break;
+            // On vérifie la cohérence des informations
+            if(!ticket.get().getCustomer().getId().equals(user.getId())) {
+                response.put(ERRORJSON, TICKET_AND_USER_DONT_MATCH);
+                logger.error(TICKET_AND_USER_DONT_MATCH_CREATE_SESSION);
 
-                case 4 : amount = 16000;
-                break;
-
-                default: response.put("error", "Le nombre de ticket enregistré ne correspond pas au champs du possible, veuillez contacter le support.");
-                    return ResponseEntity.status(HttpStatus.BAD_REQUEST).header(String.valueOf(httpHeaders.headers())).body(response);
+                return ResponseEntity
+                        .status(HttpStatus.BAD_REQUEST)
+                        .header(String.valueOf(httpHeaders.headers()))
+                        .body(response);
             }
 
-            // On nomme le ticket
-            SessionCreateParams.LineItem.PriceData.ProductData productData = SessionCreateParams.LineItem.PriceData.ProductData.builder()
-                    .setName("Ticket numéro: " + ticket.get().getId() + " " + ticket.get().getCustomer().getFirstName() + " " + ticket.get().getCustomer().getLastName())
-                    .build();
-
-            // On donne une valeur au ticket
-            SessionCreateParams.LineItem.PriceData priceData = SessionCreateParams.LineItem.PriceData.builder()
-                    .setCurrency("EUR")
-                    .setUnitAmount(Integer.toUnsignedLong(amount))
-                    .setProductData(productData)
-                    .build();
-
-            // On donne la quantité de une (offre) au "panier"
-            SessionCreateParams.LineItem lineItem = SessionCreateParams.LineItem.builder()
-                    .setQuantity(1L)
-                    .setPriceData(priceData)
-                    .build();
-
-            // On crée une session avec les éléments adéquats
-            SessionCreateParams params =
-                    SessionCreateParams.builder()
-                            .setUiMode(SessionCreateParams.UiMode.CUSTOM)
-                            .setMode(SessionCreateParams.Mode.PAYMENT)
-                            .setReturnUrl(urlFront + "/return/{CHECKOUT_SESSION_ID}/" + ticket.get().getId())
-                            .addLineItem(lineItem)
-                            .build();
-
-            Session session = Session.create(params);
-
-            //ticket.get().setSessionId(session.getId()); => dans la BDD
-            //ticketRepository.save(ticket);
-
-            // On insert les élément de la réponse à la requête
-            response.put("checkoutSessionClientSecret", session.getClientSecret());
-
-            return ResponseEntity.status(HttpStatus.OK).header(String.valueOf(httpHeaders.headers())).body(response);
-
+            logger.info(SESSION_CREATED);
+            return ResponseEntity.status(HttpStatus.OK).header(String.valueOf(httpHeaders.headers())).body(checkoutService.checkoutSessionStart(ticket.get()));
         }
+
         // Sinon on renvoie une erreur
-        response.put("error", "Ticket non trouvé.");
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).header(String.valueOf(httpHeaders.headers())).body(response);
+        response.put(ERRORJSON, TICKET_NOT_FOUND);
+        logger.error(TICKET_NOT_FOUND_CREATE_SESSION);
+
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .header(String.valueOf(httpHeaders.headers()))
+                .body(response);
     }
 
     /*
@@ -148,32 +117,46 @@ public class CheckoutController {
         // On crée le corps de la réponse
         Map<String, String> response = new HashMap<>();
 
-        if(!ticket.isPresent()) {
-            response.put("error", "Le ticket n'a pas été trouvé dans la base de données.");
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).header(String.valueOf(httpHeaders.headers())).body(response);
+        // On vérifie que le ticket existe
+        if(ticket.isPresent()) {
+
+            // On vérifie que le ticket appartient bien à l'utilisateur connecté
+            if(ticket.get().getCustomer().getId().equals(user.getId())) {
+
+                // On vérifie qu'on ne renvoie pas une erreur
+                if(checkoutService.isCheckoutPayed(sessionId, ticket.get()).containsKey(ERRORJSON)) {
+                    logger.error(NOT_PAYED);
+
+                    return ResponseEntity
+                            .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                            .header(String.valueOf(httpHeaders.headers()))
+                            .body(checkoutService.isCheckoutPayed(sessionId, ticket.get()));
+                }
+                logger.info(PAYED);
+
+                return ResponseEntity
+                        .status(HttpStatus.OK)
+                        .header(String.valueOf(httpHeaders.headers()))
+                        .body(checkoutService.isCheckoutPayed(sessionId, ticket.get()));
+            }
+
+            response.put(ERRORJSON, TICKET_AND_USER_DONT_MATCH);
+            logger.error(TICKET_AND_USER_DONT_MATCH_CHECK_PAYED);
+
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .header(String.valueOf(httpHeaders.headers()))
+                    .body(response);
         }
 
-        if(!ticket.get().getCustomer().getId().equals(user.getId())) {
-            response.put("error", "Le ticket et l'utilisateur ne correspondent pas.");
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).header(String.valueOf(httpHeaders.headers())).body(response);
-        }
+        response.put(ERRORJSON, TICKET_NOT_FOUND);
+        logger.error(TICKET_NOT_FOUND_CHECK_PAYED);
 
-        // On initialise Stripe avec la clef
-        Stripe.apiKey = stripeSecretKey;
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .header(String.valueOf(httpHeaders.headers()))
+                .body(response);
 
-        SessionRetrieveParams params = SessionRetrieveParams.builder().addExpand("line_items").build();
-
-        Session checkoutSession = Session.retrieve(sessionId, params, null);
-
-        if(checkoutSession.getPaymentStatus() != "unpaid") {
-
-            response.put("checkoutStatus", "Le paiement à bien été effectué!");
-            ticketService.ticketPayed(ticket.get().getId());
-            return ResponseEntity.status(HttpStatus.OK).header(String.valueOf(httpHeaders.headers())).body(response);
-        }
-
-        response.put("checkoutStatus", "Le paiement n'a pas été effectué, nous vous prions de bien vouloir recommencer.");
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).header(String.valueOf(httpHeaders.headers())).body(response);
     }
 
 }

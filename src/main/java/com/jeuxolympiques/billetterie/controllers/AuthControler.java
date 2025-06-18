@@ -15,6 +15,8 @@ import com.jeuxolympiques.billetterie.services.CustomerService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -27,9 +29,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -39,12 +39,34 @@ import java.util.Map;
 public class AuthControler {
 
     private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
+
     private final CustomerService customerService;
     private final AdminService adminService;
+
     private final JwtUtils jwtUtils;
+    private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
-    private HttpHeadersCORS headersCORS = new HttpHeadersCORS();
+    private final HttpHeadersCORS headersCORS = new HttpHeadersCORS();
+    private static final Logger logger = LoggerFactory.getLogger(AuthControler.class);
+
+    // On met les réponses dans des variables
+    private static final String EMAIL_ALREADY_USED = "Cet e-mail est déjà utilisé.";
+    private static final String CUSTOMER_CREATED = "La réservation a bien été créée. Veuillez patienter le temps qu'un modérateur valide votre identité.";
+    private static final String EMAIL_PASSWORD_INVALID = "Adresse e-mail ou mot de passe invalide.";
+    private static final String SESSION_ERROR = "Votre session présente un problème veuillez vous reconnecter, merci.";
+    private static final String ONLY_ONE_ADMIN = "Impossible de créer un deuxième administrateur.";
+    private static final String CREATED_ADMIN = "L'administrateur a bien été créé.";
+
+    private static final String ROLE_UNKNOWN = "ROLE_UNKNOWN";
+
+    private static final String ERRORJSON = "error";
+    private static final String ROLEJSON = "role";
+    private static final String CREATEDJSON = "created";
+
+    private static final String LOGIN_SUCCESS = "Quelqu'un s'est connecté avec succès.";
+    private static final String LOGIN_FAIL = "Quelqu'un a éssayé de se connecter sans succès.";
+    private static final String UNKNOWN_USER_CONNECTED = "Un utilisateur inconnu est connecté.";
+    private static final String SESSION_ERROR_LOGGER = "Il y a une erreur de session detectée.";
 
     /*
      * Requête pour créer un compte et réserver sa place
@@ -61,14 +83,24 @@ public class AuthControler {
         //On vérifie que l'email n'est pas déjà en base de données
         if(userRepository.findByUsername(customer.getUsername()) != null) {
 
-            response.put("error", "L'adresse e-mail est déjà utilisée.");
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).header(String.valueOf(headersCORS.headers())).body(response);
+            response.put(ERRORJSON, EMAIL_ALREADY_USED);
+            logger.error(EMAIL_ALREADY_USED);
+
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .header(String.valueOf(headersCORS.headers()))
+                    .body(response);
         }
 
         // Sinon on crée la réservation
         customerService.createCustomer(customer, passwordEncoder, imageFile);
-        response.put("created", "La réservation a bien été créée. Veuillez patienter le temps qu'un modérateur valide votre identité.");
-        return ResponseEntity.status(HttpStatus.CREATED).header(String.valueOf(headersCORS.headers())).body(response);
+        response.put(CREATEDJSON, CUSTOMER_CREATED);
+        logger.info(CUSTOMER_CREATED);
+
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .header(String.valueOf(headersCORS.headers()))
+                .body(response);
     }
 
     /*
@@ -76,11 +108,11 @@ public class AuthControler {
      */
     @PostMapping("/login")
     @CrossOrigin(origins = "http://localhost:3000")
-    public ResponseEntity<Map<String, ?>> login(@RequestBody User user) {
+    public ResponseEntity<Map<String, Object>> login(@RequestBody User user) {
 
         user.setUsername(user.getUsername().toLowerCase());
         // On crée l'objet à envoyer en réponse
-        Map<String, String> response = new HashMap<>();
+        Map<String, Object> response = new HashMap<>();
 
         try {
             // On récupère les information d'authentification
@@ -95,19 +127,33 @@ public class AuthControler {
                 authData.put("type", "Bearer");
 
                 // On retourne le jeton
-                return ResponseEntity.status(HttpStatus.OK).header(String.valueOf(headersCORS.headers())).body(authData);
+                logger.info(LOGIN_SUCCESS);
+
+                return ResponseEntity
+                        .status(HttpStatus.OK)
+                        .header(String.valueOf(headersCORS.headers()))
+                        .body(authData);
             }
 
             // Sinon on renvoie une erreur
-            response.put("error", "Adresse e-mail ou mot de passe invalide.");
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).header(String.valueOf(headersCORS.headers())).body(response);
+            response.put(ERRORJSON, EMAIL_PASSWORD_INVALID);
+            logger.error(LOGIN_FAIL);
+
+            return ResponseEntity
+                    .status(HttpStatus.UNAUTHORIZED)
+                    .header(String.valueOf(headersCORS.headers()))
+                    .body(response);
 
         } catch (AuthenticationException e) {
 
             // En cas d'exception on renvoie un message d'erreur et on log
-            response.put("error", "Adresse e-mail ou mot de passe invalide.");
-            log.error(e.getMessage());
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).header(String.valueOf(headersCORS.headers())).body(response);
+            response.put(ERRORJSON, EMAIL_PASSWORD_INVALID);
+            logger.error(e.getMessage());
+
+            return ResponseEntity
+                    .status(HttpStatus.UNAUTHORIZED)
+                    .header(String.valueOf(headersCORS.headers()))
+                    .body(response);
         }
     }
 
@@ -120,12 +166,17 @@ public class AuthControler {
     public ResponseEntity<Map<String, String>> getAuthLevel(@RequestHeader(name="Authorization") String token) {
 
         // On crée la réponse à renvoyer
-        Map<String, String> response = new HashMap();
+        Map<String, String> response = new HashMap<>();
 
         // S'il n'y a pas de token, on renvoie une réponse par défaut
         if (token.isEmpty()){
-            response.put("role", "ROLE_UNKNOWN");
-            return ResponseEntity.status(HttpStatus.OK).header(String.valueOf(headersCORS.headers())).body(response);
+            response.put(ROLEJSON, ROLE_UNKNOWN);
+            logger.info(UNKNOWN_USER_CONNECTED);
+
+            return ResponseEntity
+                    .status(HttpStatus.OK)
+                    .header(String.valueOf(headersCORS.headers()))
+                    .body(response);
         }
 
         // On vérifie l'information de rôle à partir du token
@@ -134,13 +185,22 @@ public class AuthControler {
 
         // Si l'utilisateur existe
         if(user != null) {
-            response.put("role", user.getRole());
-            return ResponseEntity.status(HttpStatus.OK).header(String.valueOf(headersCORS.headers())).body(response);
+            response.put(ROLEJSON, user.getRole());
+
+            return ResponseEntity
+                    .status(HttpStatus.OK)
+                    .header(String.valueOf(headersCORS.headers()))
+                    .body(response);
         }
 
         // Si l'utilisateur n'est pas trouvé on renvoie une erreur
-        response.put("error", "Votre session présente un problème veuillez vous reconnecter, merci.");
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).header(String.valueOf(headersCORS.headers())).body((response));
+        response.put(ERRORJSON, SESSION_ERROR);
+        logger.error(SESSION_ERROR_LOGGER);
+
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .header(String.valueOf(headersCORS.headers()))
+                .body((response));
     }
 
     /*
@@ -153,20 +213,34 @@ public class AuthControler {
 
         // On vérifie que l'adresse mail n'est pas déjà utilisée
         if(userRepository.findByUsername(admin.getUsername()) != null) {
-            response.put("error", "Cet e-mail est déjà utilisé.");
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).header(String.valueOf(headersCORS.headers())).body(response);
+            response.put(ERRORJSON, EMAIL_ALREADY_USED);
+
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .header(String.valueOf(headersCORS.headers()))
+                    .body(response);
         }
 
         // On vérifie qu'il n'y a pas déjà d'Admin
-        if(adminService.adminExist()) {
-            response.put("error", "Impossible de créer un deuxième administrateur.");
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).header(String.valueOf(headersCORS.headers())).body(response);
+        if(Boolean.TRUE.equals(adminService.adminExist())) {
+            response.put(ERRORJSON, ONLY_ONE_ADMIN);
+            logger.error(ONLY_ONE_ADMIN);
+
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .header(String.valueOf(headersCORS.headers()))
+                    .body(response);
         }
 
         // Si les conditions sont remplies on crée un admin
         adminService.createAdmin(admin);
-        response.put("created", "L'administrateur a bien été créé.");
-        return ResponseEntity.status(HttpStatus.CREATED).header(String.valueOf(headersCORS.headers())).body(response);
+        response.put(CREATEDJSON, CREATED_ADMIN);
+        logger.info(CREATED_ADMIN);
+
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .header(String.valueOf(headersCORS.headers()))
+                .body(response);
     }
 
     /*

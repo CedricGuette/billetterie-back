@@ -6,7 +6,6 @@ import lombok.Data;
 
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
-import javax.validation.constraints.Size;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -25,7 +24,7 @@ public final class Customer extends User{
     private String lastName;
 
     @NotNull
-    @Pattern(regexp = "[0-9]{10}")
+    @Pattern(regexp = "\\d{10}")
     @JsonView({Views.User.class, Views.Admin.class})
     private String phoneNumber;
 
