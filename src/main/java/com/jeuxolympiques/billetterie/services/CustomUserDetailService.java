@@ -14,14 +14,14 @@ import java.util.Collections;
 @Service
 @RequiredArgsConstructor
 public class CustomUserDetailService implements UserDetailsService {
-    private final UserRepository userRepository;
+    private final UserService userService;
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        User user = userRepository.findByUsername(username);
+        User user = userService.getUserByUsername(username);
 
         if(user == null) {
-            throw new UsernameNotFoundException("User not found with username: " +username);
+            throw new UsernameNotFoundException(STR."Utilisateur non trouvé: \{username}");
         }
         return new org.springframework.security.core.userdetails.User(user.getUsername(), user.getPassword(),
                 Collections.singletonList(new SimpleGrantedAuthority(user.getRole())));

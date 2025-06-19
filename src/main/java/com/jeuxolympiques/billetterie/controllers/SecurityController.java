@@ -2,6 +2,7 @@ package com.jeuxolympiques.billetterie.controllers;
 
 import com.jeuxolympiques.billetterie.configuration.HttpHeadersCORS;
 import com.jeuxolympiques.billetterie.configuration.JwtUtils;
+import com.jeuxolympiques.billetterie.entities.Security;
 import com.jeuxolympiques.billetterie.services.SecurityService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -16,14 +17,13 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/security")
 @RequiredArgsConstructor
-public class SecurityControler {
+public class SecurityController {
 
     private final SecurityService securityService;
+
     private final JwtUtils jwtUtils;
     private final HttpHeadersCORS headersCORS = new HttpHeadersCORS();
-    private static final Logger logger = LoggerFactory.getLogger(SecurityControler.class);
-
-    private static final String SECURITY_SCAN = "Un agent de sécurité a scanné une place";
+    private static final Logger logger = LoggerFactory.getLogger(SecurityController.class);
 
     /*
     *  Requête pour vérifier et valider un ticket
@@ -35,9 +35,12 @@ public class SecurityControler {
         // On récupère les information de l'agent de sécurité qui scan
         String username = jwtUtils.extractUsername(token.substring(7));
 
+        // On récupère les informations pour le log
+        Security security = securityService.getSecurityByUsername(username);
+
         // On démande au service de comparer les informations et de renvoyer la réponse
         Map<String, String> response = securityService.isThisTicketValid(ticketCode, username);
-        logger.info(SECURITY_SCAN);
+        logger.info(STR."L'agent \{security.getUsername()} de sécurité a scanné un ticket.");
 
         return ResponseEntity
                 .status(HttpStatus.OK)

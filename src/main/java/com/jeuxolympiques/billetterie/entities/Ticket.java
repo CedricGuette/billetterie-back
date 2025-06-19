@@ -14,16 +14,16 @@ public class Ticket {
 
     @Id
     @UuidGenerator
-    @JsonView({Views.User.class, Views.Admin.class})
+    @JsonView({Views.Customer.class, Views.Admin.class})
     private String id;
 
-    @JsonView({Views.User.class, Views.Admin.class})
+    @JsonView({Views.Customer.class, Views.Admin.class})
     private Integer eventCode;
 
-    @JsonView({Views.User.class, Views.Admin.class})
+    @JsonView({Views.Customer.class, Views.Admin.class})
     private Integer howManyTickets;
 
-    @JsonView({Views.User.class, Views.Admin.class})
+    @JsonView({Views.Customer.class, Views.Admin.class})
     private Boolean ticketIsPayed;
 
     @JsonView({Views.Admin.class})
@@ -34,10 +34,10 @@ public class Ticket {
 
     private String qrCodeUrl;
 
-    @JsonView(Views.User.class)
+    @JsonView(Views.Customer.class)
     private String ticketUrl;
 
-    @JsonView({Views.User.class, Views.Admin.class})
+    @JsonView({Views.Customer.class, Views.Admin.class})
     private LocalDateTime ticketCreatedDate;
 
     @JsonView(Views.Admin.class)
@@ -48,7 +48,7 @@ public class Ticket {
     @JoinColumn(name = "security_id")
     private Security security;
 
-    @ManyToOne
+    @ManyToOne(cascade = CascadeType.ALL)
     @JoinColumn(name="customer_id")
     private Customer customer;
 }

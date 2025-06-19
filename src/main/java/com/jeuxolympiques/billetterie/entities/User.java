@@ -27,7 +27,7 @@ public class User {
     @Size(max = 320)
     @Email(regexp = "[a-z0-9._%+-]+@\\.[a-z]{2,3}",
                       flags = Pattern.Flag.CASE_INSENSITIVE)
-    @JsonView({Views.User.class, Views.Moderator.class, Views.Admin.class})
+    @JsonView({Views.Customer.class, Views.Moderator.class, Views.Admin.class})
     private String username;
 
     private String password;
@@ -35,7 +35,11 @@ public class User {
     @JsonView(Views.UserRole.class)
     private String role;
 
-    @JsonView({Views.User.class, Views.Moderator.class, Views.Admin.class})
+    @JsonView({Views.Customer.class, Views.Moderator.class, Views.Admin.class})
     private LocalDateTime createdDate;
+
+    public enum Role {
+        ROLE_USER, ROLE_MODERATOR, ROLE_SECURITY, ROLE_ADMIN
+    }
 
 }

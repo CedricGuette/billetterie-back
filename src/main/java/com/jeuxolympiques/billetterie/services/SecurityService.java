@@ -1,16 +1,16 @@
 package com.jeuxolympiques.billetterie.services;
 
 import com.jeuxolympiques.billetterie.entities.*;
+import com.jeuxolympiques.billetterie.exceptions.EmailAlreadyUsedException;
+import com.jeuxolympiques.billetterie.exceptions.TicketAlreadyUsedException;
+import com.jeuxolympiques.billetterie.exceptions.UserNotFoundException;
 import com.jeuxolympiques.billetterie.repositories.SecurityRepository;
-import com.jeuxolympiques.billetterie.repositories.TicketRepository;
-import com.jeuxolympiques.billetterie.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -21,85 +21,114 @@ public class SecurityService {
 
     // On importe les repositories utiles aux services
 
-    private final TicketRepository ticketRepository;
+
+
     private final SecurityRepository securityRepository;
-    private final UserRepository userRepository;
+
+    private final UserService userService;
+    private final TicketService ticketService;
+
     private final PasswordEncoder passwordEncoder;
 
     /*
-     * Requête pour créer un modérateur
+     * Méthode pour créer un modérateur
      */
-    public Security createSecurity (Security security) {
+    public Map<String, String> createSecurity (Security security) {
+
+        // On vérifie que l'adresse e-mail n'est pas utilisée
+        if(userService.getUserByUsername(security.getUsername()) != null) {
+
+            throw new EmailAlreadyUsedException(STR."L'e-mail \{security.getUsername()} est déjà utilisé.");
+        }
+
         security.setPassword(passwordEncoder.encode(security.getPassword()));
         security.setCreatedDate(LocalDateTime.now());
-        security.setRole("ROLE_SECURITY");
-        return securityRepository.save(security);
+        security.setRole(String.valueOf(User.Role.ROLE_SECURITY));
+
+        // On enregistre l'agent en base de données
+        securityRepository.save(security);
+
+        // On crée la variable qui va accueillir la réponse
+        Map<String, String> response = new HashMap<>();
+        response.put("created", "L'agent de sécurité a bien été créé.");
+
+        return response;
     }
 
     /*
-    * Cette méthode permet de vérifier la validité du QRcode présent sur le ticket
+    * Méthode pour récupérer un agent de sécurité depuis son identifiant
+    */
+    public Security getSecurityById(String id) {
+        Optional<Security> security = securityRepository.findById(id);
+        if(security.isPresent()){
+            return security.get();
+        }
+        throw new UserNotFoundException("L'agent de sécurité que vous cherchez n'a pas été trouvé.");
+    }
+
+    /*
+     * Méthode pour récupérer un agent de sécurité depuis son adresse e-mail
+     */
+    public Security getSecurityByUsername(String username) {
+        User user = userService.getUserByUsername(username);
+
+        return this.getSecurityById(user.getId());
+    }
+
+    /*
+    * Méthode permettant de vérifier la validité du QRcode présent sur le ticket
     */
     public Map<String, String> isThisTicketValid(String qrCode, String username) throws NoSuchAlgorithmException {
         Map<String, String> response = new HashMap<>();
 
         // Si le QR code renvoyé ne fait la bonne taille
         if(qrCode.length() < 100 || qrCode.length() > 100) {
-            response.put("error", "L'identifiant ne correspond à aucun élément connu");
-            return response;
+            throw new IllegalArgumentException("L'identifiant ne correspond à aucun élément connu");
         }
+
         // On extrait les 36 premiers caractères qui correspondent à l'id du ticket
         String idFromQrCode = qrCode.substring(0, 36);
         String hashFromQrCode = qrCode.substring(36);
 
         // On récupère les informations en base de données
-        Optional<Ticket> ticketToVerify = ticketRepository.findById(idFromQrCode);
+        Ticket ticket = ticketService.getTicketById(idFromQrCode);
 
-        // Si le ticket existe
-        if(ticketToVerify.isPresent()) {
+        // On récupère le ticket et le client qui correspondent au QR code
+        Customer customer = ticket.getCustomer();
 
-            // On récupère le ticket et le client qui correspondent au QR code
-            Ticket ticketExist = ticketToVerify.get();
-            Customer customerToVerify = ticketExist.getCustomer();
+        // On récupère les clés pour les hasher et ensuite les comparer
+        String customerKey = customer.getCustomerKey();
+        String sellingKey = ticket.getSellingKey();
 
-            // On récupère les clés pour les hasher et ensuite les comparer
-            String customerKey = customerToVerify.getCustomerKey();
-            String sellingKey = ticketExist.getSellingKey();
+        // On reproduit le hashage
+        String keysHashed = HashService.toHash(customerKey) + HashService.toHash(sellingKey);
+        keysHashed = HashService.toHash(keysHashed);
 
-            // On reproduit le hashage
-            String keysHashed = HashService.toHash(customerKey) + HashService.toHash(sellingKey);
-            keysHashed = HashService.toHash(keysHashed);
+        // On compare les deux hash
+        if(keysHashed.equals(hashFromQrCode)) {
 
-            // On compare les deux hash
-            if(keysHashed.equals(hashFromQrCode)) {
+            // On vérifie que le ticket n'a pas déjà été utilisé
+            if(!ticket.getTicketIsUsed()){
 
-                // On vérifie que le ticket n'a pas déjà été utilisé
-                if(!ticketExist.getTicketIsUsed()){
+                // Si le ticket est encore valable, on met l'information à jour dans la base de données
+                ticket.setTicketIsUsed(true);
+                ticket.setTicketValidationDate(LocalDateTime.now());
 
-                    // Si le ticket est encore valable, on met l'information à jour dans la base de données
-                    ticketExist.setTicketIsUsed(true);
-                    ticketExist.setTicketValidationDate(LocalDateTime.now());
+                // On récupère les information de l'agent de sécurité depuis l'username
 
-                    // On récupère les information de l'agent de sécurité depuis l'username
-                    User user = userRepository.findByUsername(username);
-                    Security security = securityRepository.getById(user.getId());
+                Security security = this.getSecurityByUsername(username);
 
-                    ticketExist.setSecurity(security);
-                    ticketRepository.save(ticketExist);
+                ticket.setSecurity(security);
+                ticketService.updateTicket(ticket);
 
-                    // Et on renvoit une réponse
-                    response.put("validated", "Le ticket de " + customerToVerify.getLastName() + " " + customerToVerify.getFirstName() + " valable pour " + ticketExist.getHowManyTickets() + " places est validé !");
-                    return response;
-                }
-                // le ticket a déjà été utilisé
-                response.put("error", "Le ticket a déjà été utilisé");
+                // Et on renvoit une réponse
+                response.put("validated", STR."Le ticket de \{customer.getLastName()} \{customer.getFirstName()} valable pour \{ticket.getHowManyTickets()} places est validé !");
                 return response;
             }
-            // le ticket n'est pas valide, les hash ne correspondent pas
-            response.put("error", "L'identifiant ne correspond pas avec le reste du code");
-            return response;
+            // le ticket a déjà été utilisé
+            throw new TicketAlreadyUsedException("Le ticket a déjà été utilisé.");
         }
-        // le ticket n'est pas valide l'identifiant est incorrect
-        response.put("error", "L'identifiant ne correspond à aucun élément connu");
-        return response;
+        // le ticket n'est pas valide, les hash ne correspondent pas
+        throw new IllegalArgumentException("L'identifiant ne correspond à aucun élément connu");
     }
 }

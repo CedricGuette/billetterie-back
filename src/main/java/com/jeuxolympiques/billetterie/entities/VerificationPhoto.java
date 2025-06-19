@@ -25,7 +25,7 @@ public class VerificationPhoto {
     private LocalDateTime verificationDate;
 
     @JsonView({Views.Moderator.class})
-    @OneToOne(mappedBy = "verificationPhoto")
+    @OneToOne(mappedBy = "verificationPhoto", cascade = CascadeType.ALL)
     private Customer customer;
 
     @ManyToOne(cascade = CascadeType.ALL)

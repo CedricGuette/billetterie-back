@@ -14,6 +14,7 @@ import com.itextpdf.layout.element.Paragraph;
 import com.itextpdf.layout.element.Text;
 import com.jeuxolympiques.billetterie.entities.Customer;
 import com.jeuxolympiques.billetterie.entities.Ticket;
+import com.jeuxolympiques.billetterie.exceptions.TicketNotFoundException;
 import com.jeuxolympiques.billetterie.repositories.TicketRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -25,8 +26,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -35,16 +34,35 @@ import java.util.UUID;
 public class TicketService {
 
     private final TicketRepository ticketRepository;
+
     // On crée la constante pour le chemin du dossier où seront contenues les qrcodes et les pdf
-    private static String GENERATOR_DIRECTORY = "tickets/";
-    private static String UPLOAD_PATH = "src/main/resources/static/";
-    private static String QR_DIRECTORY = "qrcodes/";
-    private static String PDF_DIRECTORY = "pdf/";
+    private static final String GENERATOR_DIRECTORY = "tickets/";
+    private static final String UPLOAD_PATH = "src/main/resources/static/";
+    private static final String QR_DIRECTORY = "qrcodes/";
+    private static final String PDF_DIRECTORY = "pdf/";
+
+    /*
+    * Méthode pour récupérer un ticket depuis son id
+    */
+    public Ticket getTicketById(String id) {
+        Optional<Ticket> ticket = ticketRepository.findById(id);
+        if(ticket.isPresent()){
+            return ticket.get();
+        }
+        throw new TicketNotFoundException("Le ticket que vous cherchez n'a pas été trouvé.");
+    }
+
+    /*
+    * Méthode pour mettre à jour les informations du ticket
+    */
+    public void updateTicket(Ticket ticket) {
+        ticketRepository.save(ticket);
+    }
 
     /*
      *   Methode pour formater la création d'un ticket en base de données
      */
-    public Ticket createTicket(Ticket ticket, Customer customer) {
+    public void createTicket(Ticket ticket, Customer customer) {
         ticket.setTicketIsUsed(false);
         ticket.setQrCodeUrl(null);
         ticket.setTicketIsPayed(false);
@@ -53,109 +71,112 @@ public class TicketService {
         ticket.setTicketValidationDate(null);
         ticket.setTicketValidationDate(null);
         ticket.setCustomer(customer);
-        return ticket;
+
+        ticketRepository.save(ticket);
+
     }
 
     /*
     *   Methode pour valider le paiement dans la base de données
     */
     public void ticketPayed(String id) throws IOException, NoSuchAlgorithmException, WriterException {
-        Optional<Ticket> ticket = ticketRepository.findById(id);
-        if(ticket.isPresent()) {
-            Ticket ticketPayed = ticket.get();
-            // On génère ici la deuxième clef pour créer la place
-            UUID sellingKey = UUID.randomUUID();
-            ticketPayed.setSellingKey(sellingKey.toString());
-            ticketPayed.setTicketIsPayed(true);
+        Ticket ticket = this.getTicketById(id);
 
-            // On appelle les méthodes pour générer le ticket
-            pdfGeneration(id);
-            ticketRepository.save(ticketPayed);
+        // On génère ici la deuxième clef pour créer la place
+        UUID sellingKey = UUID.randomUUID();
+
+        ticket.setSellingKey(sellingKey.toString());
+        ticket.setTicketIsPayed(true);
+
+        // On appelle les méthodes pour générer le ticket
+        this.pdfGeneration(id);
+        ticketRepository.save(ticket);
+    }
+    /*
+    * Méthode pour créer un dossier
+    */
+    private void createFolder(String path){
+
+        // On vérifie si le dossier existe, sinon on le crée
+        File uploadDirectory = new File(path);
+        if (!uploadDirectory.exists()) {
+            uploadDirectory.mkdirs();
         }
     }
 
     /*
     * Methode pour génerer un QR code avec les clefs avant de créer le pdf
-     */
-    private Ticket qrGeneration(String id) throws IOException, WriterException, NoSuchAlgorithmException {
-        Optional<Ticket> ticket = ticketRepository.findById(id);
-        if(ticket.isPresent()) {
-            Ticket ticketToBeGenerated = ticket.get();
-            Customer customer = ticketToBeGenerated.getCustomer();
+    */
+    private void qrGeneration(String id) throws IOException, WriterException, NoSuchAlgorithmException {
+        Ticket ticket = this.getTicketById(id);
+        Customer customer = ticket.getCustomer();
 
-            // On récupère les clefs générées
-            String customerKey = customer.getCustomerKey();
-            String sellingKey = ticketToBeGenerated.getSellingKey();
+        // On récupère les clefs générées
+        String customerKey = customer.getCustomerKey();
+        String sellingKey = ticket.getSellingKey();
 
-            // On les hash une fois chacun puis en faisant un hash de l'ensemble
-            String keysHashed = HashService.toHash(customerKey) + HashService.toHash(sellingKey);
-            keysHashed = HashService.toHash(keysHashed);
-            //On crée la combninaison finale
-            String encodedToQr = ticketToBeGenerated.getId() + keysHashed;
+        // On les hash une fois chacun puis en faisant un hash de l'ensemble
+        String keysHashed = HashService.toHash(customerKey) + HashService.toHash(sellingKey);
+        keysHashed = HashService.toHash(keysHashed);
+        //On crée la combninaison finale
+        String encodedToQr = ticket.getId() + keysHashed;
 
-            String fileName = System.currentTimeMillis() + "_" + "qr_code.png";
-            String fileLocation = UPLOAD_PATH + GENERATOR_DIRECTORY + QR_DIRECTORY;
-            ticketToBeGenerated.setQrCodeUrl(fileLocation + fileName);
+        String fileName = System.currentTimeMillis() + "_" + "qr_code.png";
+        String fileLocation = UPLOAD_PATH + GENERATOR_DIRECTORY + QR_DIRECTORY;
+        ticket.setQrCodeUrl(fileLocation + fileName);
 
-            // On vérifie si le dossier existe, sinon on le crée
-            File uploadDirectory = new File(fileLocation);
-            if (!uploadDirectory.exists()) {
-                uploadDirectory.mkdirs();
-            }
+        // On vérifie si le dossier existe, sinon on le crée
+        this.createFolder(fileLocation);
 
-            String outputFilepath = fileLocation + fileName;
+        String outputFilepath = fileLocation + fileName;
 
-            QRCodeWriter qrCodeWriter = new QRCodeWriter();
+        QRCodeWriter qrCodeWriter = new QRCodeWriter();
 
-            BitMatrix bitMatrix = qrCodeWriter.encode(encodedToQr,
-                    BarcodeFormat.QR_CODE, 250, 250);
+        BitMatrix bitMatrix = qrCodeWriter.encode(encodedToQr,
+                BarcodeFormat.QR_CODE, 250, 250);
 
-            MatrixToImageWriter.writeToPath(bitMatrix, "png", Path.of(outputFilepath));
+        MatrixToImageWriter.writeToPath(bitMatrix, "png", Path.of(outputFilepath));
 
-            return ticketRepository.save(ticketToBeGenerated);
-        }
-        return null;
+        ticketRepository.save(ticket);
+
     }
 
-    private Ticket pdfGeneration(String id) throws IOException, NoSuchAlgorithmException, WriterException {
+    /*
+    * Méthode pour générer le pdf du ticket
+    */
+    private void pdfGeneration(String id) throws IOException, NoSuchAlgorithmException, WriterException {
         qrGeneration(id);
-        Optional<Ticket> ticket = ticketRepository.findById(id);
-        if(ticket.isPresent()) {
-            Ticket ticketToPdf = ticket.get();
-            Customer customer = ticket.get().getCustomer();
-            String fileName = System.currentTimeMillis() + "_ticket.pdf";
-            String documentLocation = UPLOAD_PATH + GENERATOR_DIRECTORY + PDF_DIRECTORY;
-            String documentOnServer = GENERATOR_DIRECTORY + PDF_DIRECTORY;
-            String imageUrl = ticketToPdf.getQrCodeUrl();
+        Ticket ticket = this.getTicketById(id);
 
-            // On vérifie que le dossier qui va accueillir le pdf existe sinon on le crée
-            File uploadDirectory = new File(documentLocation);
-            if (!uploadDirectory.exists()) {
-                uploadDirectory.mkdirs();
+        Customer customer = ticket.getCustomer();
+        String fileName = System.currentTimeMillis() + "_ticket.pdf";
+        String documentLocation = UPLOAD_PATH + GENERATOR_DIRECTORY + PDF_DIRECTORY;
+        String documentOnServer = GENERATOR_DIRECTORY + PDF_DIRECTORY;
+        String imageUrl = ticket.getQrCodeUrl();
+
+        // On vérifie que le dossier qui va accueillir le pdf existe sinon on le crée
+        this.createFolder(documentLocation);
+
+        // Mise en page du PDF
+        try (Document document = new Document(new PdfDocument(new PdfWriter(documentLocation + fileName)))) {
+            Text title = new Text(String.format("Ticket valable pour %d personnes.", ticket.getHowManyTickets()));
+            title.setBold();
+            title.setFontSize(20);
+            Image image = new Image(ImageDataFactory.create(imageUrl));
+            document.add(new Paragraph(title));
+            document.add(image);
+            Text name = new Text(String.format("Nom: %S Prénom: %s",customer.getLastName(), customer.getFirstName()));
+            document.add(new Paragraph(name));
+            // On met à jour les informations dans la base de données
+            ticket.setTicketUrl(documentOnServer + fileName);
+            ticket.setTicketCreatedDate(LocalDateTime.now());
+
+            // On supprime le QRcode une fois terminé
+            Path qrToDeletePath = Paths.get(imageUrl);
+            if(Files.exists(qrToDeletePath)) {
+                Files.delete(qrToDeletePath);
             }
-
-            // Mise en page du PDF
-            try (Document document = new Document(new PdfDocument(new PdfWriter(documentLocation + fileName)))) {
-                Text title = new Text(String.format("Ticket valable pour %d personnes.", ticket.get().getHowManyTickets()));
-                title.setBold();
-                title.setFontSize(20);
-                Image image = new Image(ImageDataFactory.create(imageUrl));
-                document.add(new Paragraph(title));
-                document.add(image);
-                Text name = new Text(String.format("Nom: %S Prénom: %s",customer.getLastName(), customer.getFirstName()));
-                document.add(new Paragraph(name));
-                // On met à jour les informations dans la base de données
-                ticketToPdf.setTicketUrl(documentOnServer + fileName);
-                ticketToPdf.setTicketCreatedDate(LocalDateTime.now());
-
-                // On supprime le QRcode une fois terminé
-                Path qrToDeletePath = Paths.get(imageUrl);
-                if(Files.exists(qrToDeletePath)) {
-                    Files.delete(qrToDeletePath);
-                }
-                return ticketRepository.save(ticketToPdf);
-            }
+            ticketRepository.save(ticket);
         }
-        return null;
     }
 }

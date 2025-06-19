@@ -2,6 +2,7 @@ package com.jeuxolympiques.billetterie.services;
 
 import com.google.zxing.WriterException;
 import com.jeuxolympiques.billetterie.entities.Ticket;
+import com.jeuxolympiques.billetterie.exceptions.CheckoutNotPayedException;
 import com.stripe.Stripe;
 
 import com.stripe.exception.StripeException;
@@ -108,9 +109,7 @@ public class CheckoutService {
 
             return response;
         }
-
-        response.put("checkoutStatus", "Le paiement n'a pas été effectué, nous vous prions de bien vouloir recommencer.");
-        return response;
+        throw new CheckoutNotPayedException("Le paiement n'a pas été effectué, nous vous prions de bien vouloir recommencer.");
     }
 }
 

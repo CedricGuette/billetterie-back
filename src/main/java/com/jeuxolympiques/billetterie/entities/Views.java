@@ -6,7 +6,7 @@ public class Views {
 
     }
 
-    public static class User extends UserRole{
+    public static class Customer extends UserRole{
 
     }
 

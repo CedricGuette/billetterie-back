@@ -15,20 +15,20 @@ public final class Customer extends User{
 
     @NotNull
     @Pattern(regexp = "[a-zA-ZÀ-ÖØ-öø-ÿ]{2,50}")
-    @JsonView({Views.User.class, Views.Moderator.class, Views.Admin.class})
+    @JsonView({Views.Customer.class, Views.Moderator.class, Views.Admin.class})
     private String firstName;
 
     @NotNull
     @Pattern(regexp = "[a-zA-ZÀ-ÖØ-öø-ÿ]{2,50}")
-    @JsonView({Views.User.class, Views.Moderator.class, Views.Admin.class})
+    @JsonView({Views.Customer.class, Views.Moderator.class, Views.Admin.class})
     private String lastName;
 
     @NotNull
     @Pattern(regexp = "\\d{10}")
-    @JsonView({Views.User.class, Views.Admin.class})
+    @JsonView({Views.Customer.class, Views.Admin.class})
     private String phoneNumber;
 
-    @JsonView({Views.User.class, Views.Admin.class})
+    @JsonView({Views.Customer.class, Views.Admin.class})
     private Boolean profileIsValidate;
 
     @JsonView(Views.Admin.class)
@@ -41,7 +41,7 @@ public final class Customer extends User{
     private VerificationPhoto verificationPhoto = new VerificationPhoto();
 
     // On crée un lien avec l'ensemble des tickets qui lui sont attribués
-    @JsonView({Views.User.class, Views.Admin.class})
+    @JsonView({Views.Customer.class, Views.Admin.class})
     @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL)
     private List<Ticket> tickets = new ArrayList<>();
 }
