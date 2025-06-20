@@ -59,13 +59,14 @@ public class ModeratorController {
         // On récupère les informations par le token pour noter le modérateur qui valide la photo
         String username = jwtUtils.extractUsername(token.substring(7));
 
-        // On récupère le client pour le log
+        // On récupère le client pour le log et le modérateur
         Customer customer = verificationPhotoService.getCustomerFromVerificationPhotoId(id);
+        Moderator moderator = moderatorService.getModeratorByUsername(username);
 
         // On crée la variable qui va recevoir la réponse
         Map<String, String> response = moderatorService.photoValidationById(id, username);
 
-        logger.info(STR."La compte \{customer.getUsername()} a bien été validé, la photo a été supprimée.");
+        logger.info(STR."Le compte \{customer.getUsername()} a bien été validé pa \{moderator.getUsername()}, la photo a été supprimée.");
 
         return ResponseEntity
                 .status(HttpStatus.OK)

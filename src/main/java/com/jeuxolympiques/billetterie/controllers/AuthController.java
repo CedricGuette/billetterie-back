@@ -81,7 +81,7 @@ public class AuthController {
         user.setUsername(user.getUsername().toLowerCase());
 
         try {
-            // On récupère les information d'authentification
+            // On récupère les informations d'authentification
             Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(user.getUsername(), user.getPassword()));
 
             // Si les informations sont cohérentes
@@ -100,7 +100,7 @@ public class AuthController {
                         .header(String.valueOf(headersCORS.headers()))
                         .body(authData);
             }
-            // Sinon on renvoie une erreur
+            // Sinon, on renvoie une erreur
             throw new EmailPasswordInvalidException("Adresse e-mail ou mot de passe invalide.");
 
         } catch (AuthenticationException e) {
@@ -118,17 +118,17 @@ public class AuthController {
 
         // On crée la réponse à renvoyer
         Map<String, String> response = new HashMap<>();
-        String ROLEJSON = "role";
+        String ROLE_JSON = "role";
 
         // S'il n'y a pas de token, on renvoie une réponse par défaut
         if (token.isEmpty()){
-            response.put(ROLEJSON, "ROLE_UNKNOWN");
+            response.put(ROLE_JSON, "ROLE_UNKNOWN");
             logger.info("Un utilisateur inconnu est connecté.");
         } else {
             // On vérifie l'information de rôle à partir du token
             String username = jwtUtils.extractUsername(token.substring(7));
             User user = userService.getUserByUsername(username);
-            response.put(ROLEJSON, user.getRole());
+            response.put(ROLE_JSON, user.getRole());
             logger.info(STR."L'utilisateur \{user.getUsername()} est connecté avec le rôle \{user.getRole()}.");
         }
 
@@ -145,7 +145,7 @@ public class AuthController {
     @CrossOrigin(origins = "http://localhost:3000")
     public ResponseEntity<Map<String, String>> createAdmin(@RequestBody Admin admin) {
 
-        // Si les conditions sont remplies on crée un admin
+        // Si les conditions sont remplies, on crée un admin
         Map<String, String> response = adminService.createAdmin(admin);
         logger.info(STR."L'administrateur \{admin.getUsername()} a bien été créé.");
 
