@@ -7,8 +7,6 @@ import com.jeuxolympiques.billetterie.exceptions.DeleteUserUnauthorizedException
 import com.jeuxolympiques.billetterie.exceptions.EmailAlreadyUsedException;
 import com.jeuxolympiques.billetterie.repositories.AdminRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -30,7 +28,7 @@ public class AdminService {
     /*
      * Méthode pour créer un Admin
      */
-    public Map<String, String> createAdmin (Admin admin) {
+    public Admin createAdmin (Admin admin) {
 
         // On vérifie qu'il n'y a pas déjà un administrateur
         if(Boolean.TRUE.equals(adminExist())) {
@@ -46,11 +44,7 @@ public class AdminService {
         admin.setCreatedDate(LocalDateTime.now());
         admin.setRole(String.valueOf(User.Role.ROLE_ADMIN));
 
-        adminRepository.save(admin);
-        // On crée la réponse
-        Map<String, String> response = new HashMap<>();
-        response.put("created", "L'administrateur a bien été créé.");
-        return response;
+        return adminRepository.save(admin);
     }
 
     /*

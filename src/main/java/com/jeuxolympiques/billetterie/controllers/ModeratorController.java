@@ -7,7 +7,6 @@ import com.jeuxolympiques.billetterie.entities.Customer;
 import com.jeuxolympiques.billetterie.entities.Moderator;
 import com.jeuxolympiques.billetterie.entities.VerificationPhoto;
 import com.jeuxolympiques.billetterie.entities.Views;
-import com.jeuxolympiques.billetterie.services.CustomerService;
 import com.jeuxolympiques.billetterie.services.ModeratorService;
 import com.jeuxolympiques.billetterie.services.VerificationPhotoService;
 import lombok.RequiredArgsConstructor;
@@ -27,7 +26,6 @@ import java.util.Map;
 public class ModeratorController {
 
     private final ModeratorService moderatorService;
-    private final CustomerService customerService;
     private final VerificationPhotoService verificationPhotoService;
 
     private final JwtUtils jwtUtils;

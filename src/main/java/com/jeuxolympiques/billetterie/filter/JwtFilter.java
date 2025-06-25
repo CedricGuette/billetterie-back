@@ -17,8 +17,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 
 @Component
 @RequiredArgsConstructor
@@ -61,8 +59,6 @@ public class JwtFilter extends OncePerRequestFilter {
 
             response.setContentType("application/json; Charset=UTF-8");
             response.setStatus(HttpStatus.FORBIDDEN.value());
-            Map<String, String> message = new HashMap<>();
-            message.put("error", "Votre session a expiré.") ;
             response.getWriter().write("{ \"error\": \"Votre session a expiré.\"}");
         }
     }

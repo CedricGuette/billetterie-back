@@ -4,7 +4,9 @@ import com.fasterxml.jackson.annotation.JsonView;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.hibernate.annotations.UuidGenerator;
 
 import javax.validation.constraints.Email;
@@ -16,6 +18,8 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "users")
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class User {
 
     @Id
@@ -41,5 +45,4 @@ public class User {
     public enum Role {
         ROLE_USER, ROLE_MODERATOR, ROLE_SECURITY, ROLE_ADMIN
     }
-
 }

@@ -37,7 +37,7 @@ public class CustomerController {
         String username = jwtUtils.extractUsername(token.substring(7));
         Customer customer = customerService.getCustomerByUsername(username);
 
-        // On renvoit l'objet client pour remplir le profil utilisateur
+        // On renvoie l'objet client pour remplir le profil utilisateur
         logger.info(STR."Le client \{customer.getUsername()} est connecté sur sa page de profil.");
 
         return ResponseEntity

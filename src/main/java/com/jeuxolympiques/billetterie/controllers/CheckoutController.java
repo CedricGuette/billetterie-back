@@ -53,7 +53,7 @@ public class CheckoutController {
             throw new CustomerAndTicketNotMatchException("Le ticket et l'utilisateur ne correspondent pas.");
         }
 
-        logger.info("Une session de paiement Stripe a bien été créée.");
+        logger.info("Une session de paiement Stripe est en cours.");
 
         return ResponseEntity
                 .status(HttpStatus.OK)
@@ -64,10 +64,9 @@ public class CheckoutController {
     /*
     * Requête pour vérifier que le paiement a bien été exécuté et donc pour lancer la conception du ticket
     */
-    @GetMapping("checkout/validation/{sessionId}/{ticketId}")
+    @GetMapping("checkout/validation/{ticketId}")
     @CrossOrigin(origins = "http://localhost:3000")
     public ResponseEntity<Map<String, String>> isCheckoutOk(@RequestHeader(name="Authorization") String token,
-                                                            @PathVariable("sessionId") String sessionId,
                                                             @PathVariable("ticketId") String ticketId) throws StripeException, IOException, NoSuchAlgorithmException, WriterException {
 
         // On récupère l'information du token
@@ -80,12 +79,12 @@ public class CheckoutController {
         // On vérifie que le ticket appartient bien à l'utilisateur connecté
         if(ticket.getCustomer().getId().equals(customer.getId())) {
 
-        logger.info(STR."Le ticket de \{customer.getUsername()} a bien été payé.");
+            logger.info(STR."Le ticket de \{customer.getUsername()} a bien été payé.");
 
-        return ResponseEntity
-                .status(HttpStatus.OK)
-                .header(String.valueOf(httpHeaders.headers()))
-                .body(checkoutService.isCheckoutPayed(sessionId, ticket));
+            return ResponseEntity
+                    .status(HttpStatus.OK)
+                    .header(String.valueOf(httpHeaders.headers()))
+                    .body(checkoutService.isCheckoutPayed(ticket));
         }
 
         throw new CustomerAndTicketNotMatchException("Le ticket et l'utilisateur ne correspondent pas.");

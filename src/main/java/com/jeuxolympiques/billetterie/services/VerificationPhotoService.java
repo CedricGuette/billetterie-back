@@ -2,6 +2,7 @@ package com.jeuxolympiques.billetterie.services;
 
 import com.jeuxolympiques.billetterie.entities.Customer;
 import com.jeuxolympiques.billetterie.entities.VerificationPhoto;
+import com.jeuxolympiques.billetterie.exceptions.EmptyVerificationPhotoException;
 import com.jeuxolympiques.billetterie.exceptions.VerificationPhotoNotFoundException;
 import com.jeuxolympiques.billetterie.repositories.VerificationPhotoRepository;
 import lombok.RequiredArgsConstructor;
@@ -50,7 +51,7 @@ public class VerificationPhotoService {
     /*
      * On met en place la méthode pour uploader les photos du repertoire
      */
-    public void uploadVerificationPhoto(Customer customer, MultipartFile imageFile) throws IOException {
+    public VerificationPhoto uploadVerificationPhoto(Customer customer, MultipartFile imageFile) throws IOException {
         if(!imageFile.isEmpty()) {
             // On vérifie que le repertoire existe bien sinon on le crée
             File uploadDirectory = new File(UPLOAD_PATH + UPLOAD_DIRECTORY);
@@ -65,7 +66,10 @@ public class VerificationPhotoService {
 
             VerificationPhoto verificationPhoto = customer.getVerificationPhoto();
             verificationPhoto.setUrl("/" + UPLOAD_DIRECTORY + fileName);
+
+            return verificationPhotoRepository.save(verificationPhoto);
         }
+        throw new EmptyVerificationPhotoException("Il n'y a aucune photo de vérification à upload.");
     }
 
     /*

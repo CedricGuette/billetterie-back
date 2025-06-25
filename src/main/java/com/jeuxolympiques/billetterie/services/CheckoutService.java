@@ -10,12 +10,15 @@ import com.stripe.model.checkout.Session;
 import com.stripe.param.checkout.SessionCreateParams;
 import com.stripe.param.checkout.SessionRetrieveParams;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -30,6 +33,7 @@ public class CheckoutService {
     private String urlFront;
 
     private final TicketService ticketService;
+    private final Logger logger = LoggerFactory.getLogger(CheckoutService.class);
 
     public Map<String, String> checkoutSessionStart(Ticket ticket) throws StripeException {
         // On initialise Stripe avec la clef
@@ -37,61 +41,66 @@ public class CheckoutService {
 
         // On crée le corps de la réponse
         Map<String, String> response = new HashMap<>();
+        Session session;
 
-        int amount;
-        switch (ticket.getHowManyTickets()) {
-            case 1:
-                amount = 5000;
-                break;
+        // On vérifie qu'il n'y a pas déjà une session de paiement ou qu'elle date d'il y a moins de 24h
+        if(ticket.getSessionId() == null || ticket.getSessionCreatedDate().isAfter(ticket.getSessionCreatedDate().plusDays(1))){
 
-            case 2:
-                amount = 9000;
-                break;
+            int amount = switch (ticket.getHowManyTickets()) {
+                case 1 -> 5000;
+                case 2 -> 9000;
+                case 4 -> 16000;
+                default ->
+                        throw new IllegalArgumentException("Le nombre de ticket enregistré ne correspond pas au champs du possible, veuillez contacter le support.");
+            };
 
-            case 4:
-                amount = 16000;
-                break;
+            // On nomme le ticket
+            SessionCreateParams.LineItem.PriceData.ProductData productData = SessionCreateParams.LineItem.PriceData.ProductData.builder()
+                    .setName(STR."Ticket numéro: \{ticket.getId()} \{ticket.getCustomer().getFirstName()} \{ticket.getCustomer().getLastName()}")
+                    .build();
 
-            default:
-                throw new IllegalArgumentException("Le nombre de ticket enregistré ne correspond pas au champs du possible, veuillez contacter le support.");
+            // On donne une valeur au ticket
+            SessionCreateParams.LineItem.PriceData priceData = SessionCreateParams.LineItem.PriceData.builder()
+                    .setCurrency("EUR")
+                    .setUnitAmount(Integer.toUnsignedLong(amount))
+                    .setProductData(productData)
+                    .build();
+
+            // On donne la quantité d'une (offre) au panier
+            SessionCreateParams.LineItem lineItem = SessionCreateParams.LineItem.builder()
+                    .setQuantity(1L)
+                    .setPriceData(priceData)
+                    .build();
+
+            // On crée une session avec les éléments adéquats
+            SessionCreateParams params =
+                    SessionCreateParams.builder()
+                            .setUiMode(SessionCreateParams.UiMode.CUSTOM)
+                            .setMode(SessionCreateParams.Mode.PAYMENT)
+                            .setReturnUrl(STR."\{urlFront}/return/\{ticket.getId()}")
+                            .addLineItem(lineItem)
+                            .build();
+
+            session = Session.create(params);
+
+            ticket.setSessionId(session.getId());
+            ticket.setSessionClientSecret(session.getClientSecret());
+            ticket.setSessionCreatedDate(LocalDateTime.now());
+            ticketService.updateTicket(ticket);
+
+            // On insère les éléments de la réponse à la requête
+            response.put("checkoutSessionClientSecret", session.getClientSecret());
+            logger.info("Création d'une nouvelle session de paiement.");
+        } else {
+            // On insère les éléments de la réponse à la requête
+            response.put("checkoutSessionClientSecret", ticket.getSessionClientSecret());
+            logger.info("Récupération d'une session de paiement existante.");
         }
-
-        // On nomme le ticket
-        SessionCreateParams.LineItem.PriceData.ProductData productData = SessionCreateParams.LineItem.PriceData.ProductData.builder()
-                .setName("Ticket numéro: " + ticket.getId() + " " + ticket.getCustomer().getFirstName() + " " + ticket.getCustomer().getLastName())
-                .build();
-
-        // On donne une valeur au ticket
-        SessionCreateParams.LineItem.PriceData priceData = SessionCreateParams.LineItem.PriceData.builder()
-                .setCurrency("EUR")
-                .setUnitAmount(Integer.toUnsignedLong(amount))
-                .setProductData(productData)
-                .build();
-
-        // On donne la quantité de une (offre) au "panier"
-        SessionCreateParams.LineItem lineItem = SessionCreateParams.LineItem.builder()
-                .setQuantity(1L)
-                .setPriceData(priceData)
-                .build();
-
-        // On crée une session avec les éléments adéquats
-        SessionCreateParams params =
-                SessionCreateParams.builder()
-                        .setUiMode(SessionCreateParams.UiMode.CUSTOM)
-                        .setMode(SessionCreateParams.Mode.PAYMENT)
-                        .setReturnUrl(urlFront + "/return/{CHECKOUT_SESSION_ID}/" + ticket.getId())
-                        .addLineItem(lineItem)
-                        .build();
-
-        Session session = Session.create(params);
-
-        // On insert les élément de la réponse à la requête
-        response.put("checkoutSessionClientSecret", session.getClientSecret());
 
         return response;
     }
 
-    public Map<String, String> isCheckoutPayed(String sessionId, Ticket ticket) throws IOException, NoSuchAlgorithmException, WriterException, StripeException {
+    public Map<String, String> isCheckoutPayed(Ticket ticket) throws IOException, NoSuchAlgorithmException, WriterException, StripeException {
         // On initialise Stripe avec la clef
         Stripe.apiKey = stripeSecretKey;
 
@@ -100,11 +109,16 @@ public class CheckoutService {
 
         SessionRetrieveParams params = SessionRetrieveParams.builder().addExpand("line_items").build();
 
-        Session checkoutSession = Session.retrieve(sessionId, params, null);
+        Session checkoutSession = Session.retrieve(ticket.getSessionId(), params, null);
 
-        if(checkoutSession.getPaymentStatus() != "unpaid") {
+        if (ticket.getTicketIsPayed().equals(true)){
+            response.put("checkoutStatus", "Le paiement a déjà été effectué!");
 
-            response.put("checkoutStatus", "Le paiement à bien été effectué!");
+            return response;
+
+        }else if(!checkoutSession.getPaymentStatus().equals("unpaid") && ticket.getTicketIsPayed().equals(false)) {
+
+            response.put("checkoutStatus", "Le paiement a bien été effectué!");
             ticketService.ticketPayed(ticket.getId());
 
             return response;
@@ -112,6 +126,3 @@ public class CheckoutService {
         throw new CheckoutNotPayedException("Le paiement n'a pas été effectué, nous vous prions de bien vouloir recommencer.");
     }
 }
-
-//ticket.get().setSessionId(session.getId()); => dans la BDD
-//ticketRepository.save(ticket);

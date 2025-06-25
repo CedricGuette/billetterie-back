@@ -2,7 +2,9 @@ package com.jeuxolympiques.billetterie.entities;
 
 import com.fasterxml.jackson.annotation.JsonView;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.hibernate.annotations.UuidGenerator;
 
 import java.time.LocalDateTime;
@@ -10,6 +12,8 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name="tickets")
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class Ticket {
 
     @Id
@@ -33,6 +37,15 @@ public class Ticket {
     private String sellingKey;
 
     private String qrCodeUrl;
+
+    @JsonView({Views.Customer.class})
+    private String sessionId;
+
+    @JsonView({Views.Customer.class})
+    private String sessionClientSecret;
+
+    @JsonView({Views.Customer.class})
+    private LocalDateTime sessionCreatedDate;
 
     @JsonView(Views.Customer.class)
     private String ticketUrl;

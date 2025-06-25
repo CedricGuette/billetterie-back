@@ -8,6 +8,7 @@ import com.jeuxolympiques.billetterie.entities.Admin;
 import com.jeuxolympiques.billetterie.entities.Customer;
 import com.jeuxolympiques.billetterie.entities.User;
 import com.jeuxolympiques.billetterie.entities.Views;
+import com.jeuxolympiques.billetterie.exceptions.CustomerNotCreatedException;
 import com.jeuxolympiques.billetterie.exceptions.EmailPasswordInvalidException;
 import com.jeuxolympiques.billetterie.services.AdminService;
 import com.jeuxolympiques.billetterie.services.CustomerService;
@@ -59,8 +60,11 @@ public class AuthController {
         // On force l'adresse mail en minuscule
         customer.setUsername(customer.getUsername().toLowerCase());
 
-        // On crée l'objet à envoyer en réponse
-        Map<String, String> response = customerService.createCustomer(customer, passwordEncoder, imageFile);
+        Customer createdCustomer = customerService.createCustomer(customer, passwordEncoder, imageFile);
+
+        // On crée la réponse à renvoyer
+        Map<String, String> response = new HashMap<>();
+        response.put("created", STR."Bienvenue \{customer.getFirstName()}, votre réservation a bien été créée. Veuillez patienter le temps qu'un modérateur valide votre identité.");
 
         logger.info(STR."La réservation de \{customer.getUsername()} a bien été créée.");
 
@@ -68,6 +72,7 @@ public class AuthController {
                 .status(HttpStatus.CREATED)
                 .header(String.valueOf(headersCORS.headers()))
                 .body(response);
+
     }
 
     /*
@@ -120,17 +125,11 @@ public class AuthController {
         Map<String, String> response = new HashMap<>();
         String ROLE_JSON = "role";
 
-        // S'il n'y a pas de token, on renvoie une réponse par défaut
-        if (token.isEmpty()){
-            response.put(ROLE_JSON, "ROLE_UNKNOWN");
-            logger.info("Un utilisateur inconnu est connecté.");
-        } else {
-            // On vérifie l'information de rôle à partir du token
-            String username = jwtUtils.extractUsername(token.substring(7));
-            User user = userService.getUserByUsername(username);
-            response.put(ROLE_JSON, user.getRole());
-            logger.info(STR."L'utilisateur \{user.getUsername()} est connecté avec le rôle \{user.getRole()}.");
-        }
+        // On vérifie l'information de rôle à partir du token
+        String username = jwtUtils.extractUsername(token.substring(7));
+        User user = userService.getUserByUsername(username);
+        response.put(ROLE_JSON, user.getRole());
+        logger.info(STR."L'utilisateur \{user.getUsername()} est connecté avec le rôle \{user.getRole()}.");
 
         return ResponseEntity
                 .status(HttpStatus.OK)
@@ -146,8 +145,13 @@ public class AuthController {
     public ResponseEntity<Map<String, String>> createAdmin(@RequestBody Admin admin) {
 
         // Si les conditions sont remplies, on crée un admin
-        Map<String, String> response = adminService.createAdmin(admin);
-        logger.info(STR."L'administrateur \{admin.getUsername()} a bien été créé.");
+        Admin createdAdmin = adminService.createAdmin(admin);
+
+        logger.info(STR."L'administrateur \{createdAdmin.getUsername()} a bien été créé.");
+
+        // On crée la réponse
+        Map<String, String> response = new HashMap<>();
+        response.put("created", "L'administrateur a bien été créé.");
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)

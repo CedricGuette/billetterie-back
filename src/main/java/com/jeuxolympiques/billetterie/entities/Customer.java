@@ -3,14 +3,17 @@ package com.jeuxolympiques.billetterie.entities;
 import com.fasterxml.jackson.annotation.JsonView;
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 @Entity
 @Data
+@NoArgsConstructor
 public final class Customer extends User{
 
     @NotNull
@@ -44,4 +47,16 @@ public final class Customer extends User{
     @JsonView({Views.Customer.class, Views.Admin.class})
     @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL)
     private List<Ticket> tickets = new ArrayList<>();
+
+    public Customer(String id, String username, String password, String role, LocalDateTime createdDate, String firstName, String lastName, String phoneNumber,
+                    Boolean profileIsValidate, String customerKey, VerificationPhoto verificationPhoto, List<Ticket> tickets) {
+        super(id, username, password, role, createdDate);
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.phoneNumber = phoneNumber;
+        this.profileIsValidate = profileIsValidate;
+        this.customerKey = customerKey;
+        this.verificationPhoto = verificationPhoto;
+        this.tickets = tickets;
+    }
 }

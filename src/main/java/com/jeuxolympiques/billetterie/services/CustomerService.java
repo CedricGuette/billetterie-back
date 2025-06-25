@@ -13,9 +13,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -66,7 +64,7 @@ public class CustomerService {
     /*
      * Méthode pour créer un nouveau client
      */
-    public Map<String, String> createCustomer(Customer customer, PasswordEncoder passwordEncoder, MultipartFile imageFile) throws IOException {
+    public Customer createCustomer(Customer customer, PasswordEncoder passwordEncoder, MultipartFile imageFile) throws IOException {
 
         // On vérifie que l'adresse mail n'est pas déjà utilisée
         if(userService.getUserByUsername(customer.getUsername()) != null) {
@@ -89,17 +87,6 @@ public class CustomerService {
 
         verificationPhotoService.uploadVerificationPhoto(customer, imageFile);
 
-        customerRepository.save(customer);
-
-        // On crée la réponse à renvoyer
-        Map<String, String> response = new HashMap<>();
-        response.put("created", "La réservation a bien été créée. Veuillez patienter le temps qu'un modérateur valide votre identité.");
-
-        return response;
-    }
-
-    public List<Ticket> listOfTicketsFromCustomersId(String id) {
-        Customer customer = getCustomerById(id);
-        return customer.getTickets();
+        return customerRepository.save(customer);
     }
 }

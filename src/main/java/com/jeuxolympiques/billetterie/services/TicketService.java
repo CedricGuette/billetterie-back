@@ -20,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -55,14 +56,14 @@ public class TicketService {
     /*
     * Méthode pour mettre à jour les informations du ticket
     */
-    public void updateTicket(Ticket ticket) {
-        ticketRepository.save(ticket);
+    public Ticket updateTicket(Ticket ticket) {
+        return ticketRepository.save(ticket);
     }
 
     /*
      *   Methode pour formater la création d'un ticket en base de données
      */
-    public void createTicket(Ticket ticket, Customer customer) {
+    public Ticket createTicket(Ticket ticket, Customer customer) {
         ticket.setTicketIsUsed(false);
         ticket.setQrCodeUrl(null);
         ticket.setTicketIsPayed(false);
@@ -72,14 +73,13 @@ public class TicketService {
         ticket.setTicketValidationDate(null);
         ticket.setCustomer(customer);
 
-        ticketRepository.save(ticket);
-
+        return ticketRepository.save(ticket);
     }
 
     /*
     *   Methode pour valider le paiement dans la base de données
     */
-    public void ticketPayed(String id) throws IOException, NoSuchAlgorithmException, WriterException {
+    public Ticket ticketPayed(String id) throws IOException, NoSuchAlgorithmException, WriterException {
         Ticket ticket = this.getTicketById(id);
 
         // On génère ici la deuxième clef pour créer la place
@@ -90,7 +90,7 @@ public class TicketService {
 
         // On appelle les méthodes pour générer le ticket
         this.pdfGeneration(id);
-        ticketRepository.save(ticket);
+        return ticketRepository.save(ticket);
     }
     /*
     * Méthode pour créer un dossier
@@ -154,6 +154,10 @@ public class TicketService {
         String documentOnServer = GENERATOR_DIRECTORY + PDF_DIRECTORY;
         String imageUrl = ticket.getQrCodeUrl();
 
+        if(imageUrl == null){
+            throw new FileNotFoundException("Le QR code est introuvable.");
+        }
+
         // On vérifie que le dossier qui va accueillir le pdf existe sinon on le crée
         this.createFolder(documentLocation);
 
@@ -172,6 +176,7 @@ public class TicketService {
             ticket.setTicketCreatedDate(LocalDateTime.now());
 
             // On supprime le QRcode une fois terminé
+            ticket.setQrCodeUrl("");
             Path qrToDeletePath = Paths.get(imageUrl);
             if(Files.exists(qrToDeletePath)) {
                 Files.delete(qrToDeletePath);

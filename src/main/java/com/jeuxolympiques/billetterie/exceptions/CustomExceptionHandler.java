@@ -31,6 +31,36 @@ public class CustomExceptionHandler {
                 .body(apiError);
     }
 
+    @ExceptionHandler(EmptyVerificationPhotoException.class)
+    public ResponseEntity<ApiError> handleEmptyVerificationPhotoException(EmptyVerificationPhotoException e) {
+        ApiError apiError = new ApiError();
+        apiError.setError(e.getMessage());
+        apiError.setCode(HttpStatus.INTERNAL_SERVER_ERROR.value());
+        apiError.setTimestamp(LocalDateTime.now());
+
+        logger.error(e.getMessage());
+
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .header(String.valueOf(headersCORS.headers()))
+                .body(apiError);
+    }
+
+    @ExceptionHandler(CustomerNotCreatedException.class)
+    public ResponseEntity<ApiError> handleCustomerNotCreatedException(CustomerNotCreatedException e) {
+        ApiError apiError = new ApiError();
+        apiError.setError("La réservation n'a pas été enregistrée, veuillez réessayer.");
+        apiError.setCode(HttpStatus.FORBIDDEN.value());
+        apiError.setTimestamp(LocalDateTime.now());
+
+        logger.error(e.getMessage());
+
+        return ResponseEntity
+                .status(HttpStatus.FORBIDDEN)
+                .header(String.valueOf(headersCORS.headers()))
+                .body(apiError);
+    }
+
     @ExceptionHandler(EmailPasswordInvalidException.class)
     public ResponseEntity<ApiError> handleEmailPasswordInvalidException(EmailPasswordInvalidException e) {
         ApiError apiError = new ApiError();

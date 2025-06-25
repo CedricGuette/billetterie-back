@@ -54,7 +54,11 @@ public class AdminController {
     @CrossOrigin(origins = "http://localhost:3000")
     public ResponseEntity<Map<String, String>> createModerator(@RequestBody Moderator moderator) {
 
-        Map<String, String> response = moderatorService.createModerator(moderator);
+        //On crée la varaible qui va recevoir la réponse
+        Map<String, String> response = new HashMap<>();
+        response.put("created", "Le modérateur a bien été créé.");
+
+        moderatorService.createModerator(moderator);
 
         logger.info(STR."le modérateur \{moderator.getUsername()} a été créé.");
 
@@ -71,7 +75,11 @@ public class AdminController {
     @CrossOrigin(origins = "http://localhost:3000")
     public ResponseEntity<Map<String, String>> createSecurity(@RequestBody Security security) {
 
-        Map<String, String> response = securityService.createSecurity(security);
+        securityService.createSecurity(security);
+
+        // On crée la variable qui va accueillir la réponse
+        Map<String, String> response = new HashMap<>();
+        response.put("created", "L'agent de sécurité a bien été créé.");
 
         logger.info(STR."L'agent de sécurité \{security.getUsername()} a bien été créé.");
 

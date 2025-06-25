@@ -3,7 +3,9 @@ package com.jeuxolympiques.billetterie.entities;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonView;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.hibernate.annotations.UuidGenerator;
 
 import java.time.LocalDateTime;
@@ -11,6 +13,8 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "verification_photo")
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class VerificationPhoto {
 
     @JsonView(Views.Moderator.class)
@@ -32,4 +36,5 @@ public class VerificationPhoto {
     @JsonIgnore
     @JoinColumn(name="moderator_id")
     private Moderator moderator;
+
 }

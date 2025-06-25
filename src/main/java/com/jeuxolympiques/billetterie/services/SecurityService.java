@@ -19,10 +19,6 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class SecurityService {
 
-    // On importe les repositories utiles aux services
-
-
-
     private final SecurityRepository securityRepository;
 
     private final UserService userService;
@@ -33,7 +29,7 @@ public class SecurityService {
     /*
      * Méthode pour créer un modérateur
      */
-    public Map<String, String> createSecurity (Security security) {
+    public Security createSecurity (Security security) {
 
         // On vérifie que l'adresse e-mail n'est pas utilisée
         if(userService.getUserByUsername(security.getUsername()) != null) {
@@ -46,13 +42,9 @@ public class SecurityService {
         security.setRole(String.valueOf(User.Role.ROLE_SECURITY));
 
         // On enregistre l'agent en base de données
-        securityRepository.save(security);
+        Security savedSecurity = securityRepository.save(security);
 
-        // On crée la variable qui va accueillir la réponse
-        Map<String, String> response = new HashMap<>();
-        response.put("created", "L'agent de sécurité a bien été créé.");
-
-        return response;
+        return savedSecurity;
     }
 
     /*
@@ -82,7 +74,7 @@ public class SecurityService {
         Map<String, String> response = new HashMap<>();
 
         // Si le QR code renvoyé ne fait la bonne taille
-        if(qrCode.length() < 100 || qrCode.length() > 100) {
+        if(qrCode.length() != 100) {
             throw new IllegalArgumentException("L'identifiant ne correspond à aucun élément connu");
         }
 
@@ -114,14 +106,14 @@ public class SecurityService {
                 ticket.setTicketIsUsed(true);
                 ticket.setTicketValidationDate(LocalDateTime.now());
 
-                // On récupère les information de l'agent de sécurité depuis l'username
+                // On récupère les informations de l'agent de sécurité depuis l'username
 
                 Security security = this.getSecurityByUsername(username);
 
                 ticket.setSecurity(security);
                 ticketService.updateTicket(ticket);
 
-                // Et on renvoit une réponse
+                // Et on renvoie une réponse
                 response.put("validated", STR."Le ticket de \{customer.getLastName()} \{customer.getFirstName()} valable pour \{ticket.getHowManyTickets()} places est validé !");
                 return response;
             }

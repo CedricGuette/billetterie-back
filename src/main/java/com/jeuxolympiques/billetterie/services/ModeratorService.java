@@ -22,7 +22,6 @@ public class ModeratorService {
     private final ModeratorRepository moderatorRepository;
 
     private final UserService userService;
-
     private final CustomerService customerService;
     private final VerificationPhotoService verificationPhotoService;
 
@@ -32,7 +31,7 @@ public class ModeratorService {
     /*
     * Méthode pour créer un modérateur
     */
-    public Map<String, String> createModerator (Moderator moderator) {
+    public Moderator createModerator (Moderator moderator) {
 
         // On vérifie que l'adresse mail n'est pas déjà utilisée
         if(userService.getUserByUsername(moderator.getUsername()) != null) {
@@ -45,13 +44,8 @@ public class ModeratorService {
         moderator.setRole(String.valueOf(User.Role.ROLE_MODERATOR));
 
         // On enregistre le modérateur en base de données
-        moderatorRepository.save(moderator);
+        return moderatorRepository.save(moderator);
 
-        //On crée la varaible qui va recevoir la réponse
-        Map<String, String> response = new HashMap<>();
-        response.put("created", "Le modérateur a bien été créé.");
-
-        return response;
     }
 
     /*

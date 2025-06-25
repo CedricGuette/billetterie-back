@@ -1,7 +1,6 @@
 package com.jeuxolympiques.billetterie.services;
 
 import com.jeuxolympiques.billetterie.entities.User;
-import com.jeuxolympiques.billetterie.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
