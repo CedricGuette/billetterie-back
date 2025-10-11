@@ -4,101 +4,120 @@ import com.jeuxolympiques.billetterie.entities.Customer;
 import com.jeuxolympiques.billetterie.entities.Moderator;
 import com.jeuxolympiques.billetterie.entities.User;
 import com.jeuxolympiques.billetterie.entities.VerificationPhoto;
-import com.jeuxolympiques.billetterie.repositories.CustomerRepository;
+import com.jeuxolympiques.billetterie.exceptions.EmailAlreadyUsedException;
+import com.jeuxolympiques.billetterie.exceptions.UserNotFoundException;
 import com.jeuxolympiques.billetterie.repositories.ModeratorRepository;
-import com.jeuxolympiques.billetterie.repositories.UserRepository;
-import com.jeuxolympiques.billetterie.repositories.VerificationPhotoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
 public class ModeratorService {
     // On importe les repositories nécessaire au traitement des données
-    private final VerificationPhotoRepository verificationPhotoRepository;
     private final ModeratorRepository moderatorRepository;
-    private final CustomerRepository customerRepository;
+
+    private final UserService userService;
+    private final CustomerService customerService;
     private final VerificationPhotoService verificationPhotoService;
+
     private final PasswordEncoder passwordEncoder;
-    private final UserRepository userRepository;
 
-    /*
-    * Requête pour créer un modérateur
-    */
+
+
+    /**
+     * Méthode pour créer un modérateur
+     * @param moderator Informations du modérateur à créer
+     * @return le modérateur sauvegardé en base de données
+     */
     public Moderator createModerator (Moderator moderator) {
+
+        // On vérifie que l'adresse mail n'est pas déjà utilisée
+        if(userService.getUserByUsername(moderator.getUsername()) != null) {
+
+            throw new EmailAlreadyUsedException(STR."L'e-mail \{moderator.getUsername()} est déjà utilisé.");
+        }
+
         moderator.setPassword(passwordEncoder.encode(moderator.getPassword()));
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy hh:mm");
-        moderator.setCreatedDate(LocalDateTime.now().format(formatter));
-        moderator.setRole("ROLE_MODERATOR");
+        moderator.setCreatedDate(LocalDateTime.now());
+        moderator.setRole(String.valueOf(User.Role.ROLE_MODERATOR));
+
+        // On enregistre le modérateur en base de données
         return moderatorRepository.save(moderator);
+
     }
 
-    /*
-    * Requête pour récupérer sous forme de List<> l'ensemble des photos de vérification
-    */
-    public List<VerificationPhoto> getAllVerificationPhoto() {
-        List<VerificationPhoto> listOfVerificationPhoto = new ArrayList<>();
-        List<VerificationPhoto> allVerificationPhotos;
-        allVerificationPhotos = verificationPhotoRepository.findAll();
-        for(int i = 0 ; i < allVerificationPhotos.size() ; i++ ){
-            if(allVerificationPhotos.get(i).getUrl() != null){
-                listOfVerificationPhoto.add(allVerificationPhotos.get(i));
-            }
-        }
-        return listOfVerificationPhoto;
-    }
-
-    /*
-     * Requête pour récupérer la photo de vérification par rapport à l'id demandée
+    /**
+     * Méthode pour récupérer un modérateur depuis son id
+     * @param id Identifiant du modérateur à chercher
+     * @return le modérateur corréspondant à l'identifiant
      */
-    public VerificationPhoto getVerificationPhotoById(String id) {
-        Optional<VerificationPhoto> verificationPhoto = verificationPhotoRepository.findById(id);
-            return verificationPhoto.orElse(null);
+    public Moderator getModeratorById(String id) {
+        Optional<Moderator> moderator = moderatorRepository.findById(id);
+        if(moderator.isPresent()){
+            return moderator.get();
+        }
+        throw new UserNotFoundException("Le modérateur que vous cherchez n'a pas été trouvé.");
     }
 
-    /*
-     * Requête pour valider une photo, la supprimer du serveur, générer une clef pour le client et lui affecter
+    /**
+     * Méthode pour récupérer un modérateur depuis son adresse e-mail
+     * @param username Nom d'utilisateur du modérateur
+     * @return Le modérateur correspondant au nom d'utilisateur
      */
-    public Boolean photoValidationById(String id, String username) throws IOException {
-        Optional<VerificationPhoto> verificationPhoto = verificationPhotoRepository.findById(id);
-        if(verificationPhoto.isPresent()) {
+    public Moderator getModeratorByUsername(String username) {
+        User user = userService.getUserByUsername(username);
 
-            // On récupère l'information en base de données
-            VerificationPhoto existingVerificationPhoto = verificationPhoto.get();
+        return this.getModeratorById(user.getId());
+    }
 
-            // On récupère le client rattaché à cette photo de vérification
-            Customer verifiedCustomer = existingVerificationPhoto.getCustomer();
+    /**
+     * Méthode pour récupérer sous forme de List<> l'ensemble des photos de vérification encore actives
+     * @return List<> de l'ensemble des photos de vérification encore actives
+     */
+    public List<VerificationPhoto> getAllVerificationPhotos() {
+        return verificationPhotoService.getAllVerificationPhotos();
+    }
 
-            // Supprimer la photo du serveur
-            verificationPhotoService.deleteVerificationPhoto(verifiedCustomer);
+    /**
+     * Méthode pour valider une photo, la supprimer du serveur, générer une clef pour le client et lui affecter
+     * @param photoId Url de la photo à traiter
+     * @param username Nom d'utilisateur du client lié à la photo
+     * @return Une réponse à renvoyer en requête pour confirmer la validation de la photo
+     * @throws IOException
+     */
+    public Map<String, String> photoValidationById(String photoId, String username) throws IOException {
+        VerificationPhoto verificationPhoto = verificationPhotoService.getVerificationPhotoById(photoId);
 
-            // On supprime l'url de la photo de verification
-            existingVerificationPhoto.setUrl(null);
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy hh:mm");
-            existingVerificationPhoto.setVerificationDate(LocalDateTime.now().format(formatter));
+        // On récupère le client rattaché à cette photo de vérification
+        Customer customer = verificationPhoto.getCustomer();
 
-            User user = userRepository.findByUsername(username);
-            Optional<Moderator> moderator = moderatorRepository.findById(user.getId());
-            existingVerificationPhoto.setModerator(moderator.get());
+        // Supprimer la photo du serveur
+        verificationPhotoService.deleteVerificationPhoto(customer);
 
-            // Génération de la clef d'utilisateur
-            UUID customerKey = UUID.randomUUID();
+        // On supprime l'url de la photo de verification
+        verificationPhoto.setUrl(null);
+        verificationPhoto.setVerificationDate(LocalDateTime.now());
 
-            // On passe le statut du client en vérifié et on lui affecte la clef générée
-            verifiedCustomer.setProfileIsValidate(true);
-            verifiedCustomer.setCustomerKey(customerKey.toString());
-            customerRepository.save(verifiedCustomer);
-            return true;
-        }
-        return false;
+        Moderator moderator = this.getModeratorByUsername(username);
+
+        verificationPhoto.setModerator(moderator);
+
+        // Génération de la clef d'utilisateur
+        UUID customerKey = UUID.randomUUID();
+
+        // On passe le statut du client en vérifié et on lui affecte la clef générée
+        customer.setProfileIsValidate(true);
+        customer.setCustomerKey(customerKey.toString());
+        customerService.updateCustomer(customer);
+
+        // On crée la réponse
+        Map<String, String> response = new HashMap<>();
+        response.put("validated", "La compte a bien été validé, la photo a été supprimée.");
+        return response;
     }
 }

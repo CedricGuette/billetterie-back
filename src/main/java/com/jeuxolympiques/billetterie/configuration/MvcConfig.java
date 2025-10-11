@@ -9,6 +9,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @EnableWebMvc
 public class MvcConfig implements WebMvcConfigurer {
 
+    // On donne accès aux fichiers disponibles dans le dossier ressources
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         registry

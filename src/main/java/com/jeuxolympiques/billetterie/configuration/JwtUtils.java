@@ -17,17 +17,19 @@ import java.util.function.Function;
 @Component
 public class JwtUtils {
 
-    @Value("${app.secret-key}")
+    @Value("${SECRET_KEY}")
     private String secretKey;
 
     @Value("${app.expiration-time}")
     private long expirationTime;
 
+    // Méthode pour générer un token
     public String generateToken(String username) {
         Map<String, Object> claims = new HashMap<>();
         return createToken(claims, username);
     }
 
+    // On met en place tous les paramètres pour créer un token
     private String createToken(Map<String, Object> claims, String subject) {
         return Jwts.builder()
                 .claims(claims)
@@ -39,23 +41,29 @@ public class JwtUtils {
     }
 
     private SecretKey getSignedKey() {
+
         return Keys.hmacShaKeyFor(secretKey.getBytes(StandardCharsets.UTF_8));
     }
 
+    // Méthode pour récupérer les informations du token
     public Boolean validateToken(String token, UserDetails userDetails) {
         String username = extractUsername(token);
         return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
     }
 
+    // Méthode pour vérifier si la session du token est toujours valable
     private boolean isTokenExpired(String token) {
+
         return extractExepirationDate(token).before(new Date());
     }
 
     public String extractUsername(String token){
+
         return extractClaim(token, Claims::getSubject);
     }
 
     private Date extractExepirationDate(String token) {
+
         return  extractClaim(token, Claims::getExpiration);
     }
 
