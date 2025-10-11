@@ -1,0 +1,206 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>Coverage Report > VerificationPhotoService</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope:     <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.jeuxolympiques.billetterie.services</a>
+</div>
+
+<h1>Coverage Summary for Class: VerificationPhotoService (com.jeuxolympiques.billetterie.services)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">VerificationPhotoService</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (5/5)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    66,7%
+  </span>
+  <span class="absValue">
+    (4/6)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    89,5%
+  </span>
+  <span class="absValue">
+    (17/19)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.jeuxolympiques.billetterie.services;
+&nbsp;
+&nbsp;import com.jeuxolympiques.billetterie.entities.Customer;
+&nbsp;import com.jeuxolympiques.billetterie.entities.VerificationPhoto;
+&nbsp;import com.jeuxolympiques.billetterie.exceptions.EmptyVerificationPhotoException;
+&nbsp;import com.jeuxolympiques.billetterie.exceptions.VerificationPhotoNotFoundException;
+&nbsp;import com.jeuxolympiques.billetterie.repositories.VerificationPhotoRepository;
+&nbsp;import lombok.RequiredArgsConstructor;
+&nbsp;import org.springframework.stereotype.Service;
+&nbsp;import org.springframework.web.multipart.MultipartFile;
+&nbsp;
+&nbsp;import java.io.IOException;
+&nbsp;import java.util.List;
+&nbsp;import java.util.Optional;
+&nbsp;
+&nbsp;@Service
+&nbsp;@RequiredArgsConstructor
+&nbsp;public class VerificationPhotoService {
+&nbsp;
+&nbsp;    private final VerificationPhotoRepository verificationPhotoRepository;
+&nbsp;    private final ImageService imageService;
+&nbsp;
+&nbsp;    // On prépare une constante pour gérer l&#39;upload des photos de vérification
+&nbsp;    private static final String UPLOAD_DIRECTORY = &quot;uploads/verification/&quot;;
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Méthode pour renvoyer l&#39;ensemble des photos de vérification sous forme de liste
+&nbsp;     * @return List&lt;&gt; des photos de verification
+&nbsp;     */
+&nbsp;    public List&lt;VerificationPhoto&gt; getAllVerificationPhotos(){
+<b class="fc">&nbsp;        List&lt;VerificationPhoto&gt; listOfAllPhotos = verificationPhotoRepository.findAll();</b>
+<b class="fc">&nbsp;        return listOfAllPhotos.stream()</b>
+<b class="fc">&nbsp;                .filter(verificationPhoto -&gt; verificationPhoto.getUrl() != null)</b>
+<b class="fc">&nbsp;                .toList();</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Méthode pour récupérer une photo de vérification depuis son id
+&nbsp;     * @param id Identifiant de la photo de verification cherchée
+&nbsp;     * @return La photo de vérification correspondante à l&#39;id
+&nbsp;     */
+&nbsp;    public VerificationPhoto getVerificationPhotoById(String id){
+<b class="fc">&nbsp;        Optional&lt;VerificationPhoto&gt; verificationPhoto = verificationPhotoRepository.findById(id);</b>
+<b class="pc">&nbsp;        if(verificationPhoto.isPresent()){</b>
+<b class="fc">&nbsp;           return verificationPhoto.get();</b>
+&nbsp;        }
+<b class="nc">&nbsp;        throw new VerificationPhotoNotFoundException(&quot;La photo de vérification cherchée n&#39;a pas été trouvée.&quot;);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * On met en place la méthode pour uploader les photos du repertoire
+&nbsp;     * @param customer Client lié à la photo de vérification
+&nbsp;     * @param imageFile Image à upload en tant photo de vérification
+&nbsp;     * @return La photo de vérification enregistrée en base de données
+&nbsp;     * @throws IOException
+&nbsp;     */
+&nbsp;    public VerificationPhoto uploadVerificationPhoto(Customer customer, MultipartFile imageFile) throws IOException {
+<b class="pc">&nbsp;        if(!imageFile.isEmpty()) {</b>
+<b class="fc">&nbsp;            VerificationPhoto verificationPhoto = customer.getVerificationPhoto();</b>
+<b class="fc">&nbsp;            verificationPhoto.setUrl(imageService.uploadImage(imageFile, UPLOAD_DIRECTORY));</b>
+&nbsp;
+<b class="fc">&nbsp;            return verificationPhotoRepository.save(verificationPhoto);</b>
+&nbsp;        }
+<b class="nc">&nbsp;        throw new EmptyVerificationPhotoException(&quot;Il n&#39;y a aucune photo de vérification à upload.&quot;);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * On met en place la méthode pour supprimer les photos du repertoire
+&nbsp;     * @param customer Client de la photo de vérification à supprimer
+&nbsp;     * @throws IOException
+&nbsp;     */
+&nbsp;    public VerificationPhoto deleteVerificationPhoto (Customer customer) throws IOException {
+<b class="fc">&nbsp;        VerificationPhoto verificationPhoto = customer.getVerificationPhoto();</b>
+<b class="fc">&nbsp;        imageService.deleteImage(verificationPhoto.getUrl());</b>
+<b class="fc">&nbsp;        verificationPhoto.setUrl(null);</b>
+&nbsp;
+<b class="fc">&nbsp;        return verificationPhotoRepository.save(verificationPhoto);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Méthode pour récupérer le client depuis l&#39;id d&#39;une photo
+&nbsp;     * @param photoId Identifiant de la photo de vérification dont on veut récupérer le client
+&nbsp;     * @return
+&nbsp;     */
+&nbsp;    public Customer getCustomerFromVerificationPhotoId(String photoId){
+<b class="fc">&nbsp;        VerificationPhoto verificationPhoto = this.getVerificationPhotoById(photoId);</b>
+&nbsp;
+<b class="fc">&nbsp;        return verificationPhoto.getCustomer();</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2025-10-11 09:44</div>
+</div>
+</body>
+</html>

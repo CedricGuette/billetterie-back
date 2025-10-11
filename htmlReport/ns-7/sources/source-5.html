@@ -1,0 +1,272 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>Coverage Report > EventService</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope:     <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.jeuxolympiques.billetterie.services</a>
+</div>
+
+<h1>Coverage Summary for Class: EventService (com.jeuxolympiques.billetterie.services)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">EventService</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (8/8)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    50%
+  </span>
+  <span class="absValue">
+    (4/8)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    69,6%
+  </span>
+  <span class="absValue">
+    (32/46)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.jeuxolympiques.billetterie.services;
+&nbsp;
+&nbsp;import com.jeuxolympiques.billetterie.entities.Event;
+&nbsp;import com.jeuxolympiques.billetterie.exceptions.EventNotFoundException;
+&nbsp;import com.jeuxolympiques.billetterie.repositories.EventRepository;
+&nbsp;import lombok.RequiredArgsConstructor;
+&nbsp;import org.springframework.boot.context.event.ApplicationReadyEvent;
+&nbsp;import org.springframework.context.event.EventListener;
+&nbsp;import org.springframework.stereotype.Service;
+&nbsp;import org.springframework.web.multipart.MultipartFile;
+&nbsp;
+&nbsp;import java.io.IOException;
+&nbsp;import java.time.LocalDateTime;
+&nbsp;import java.util.List;
+&nbsp;import java.util.Optional;
+&nbsp;
+&nbsp;@Service
+&nbsp;@RequiredArgsConstructor
+&nbsp;public class EventService {
+&nbsp;
+&nbsp;    // On importe le repository concerné
+&nbsp;    private final EventRepository eventRepository;
+&nbsp;    private final ImageService imageService;
+&nbsp;
+&nbsp;    // On prépare une constante pour gérer l&#39;upload des photos de vérification
+&nbsp;    private static final String UPLOAD_DIRECTORY = &quot;uploads/event/&quot;;
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Méthode pour récupérer la liste des évènements
+&nbsp;     * @return List des évènements
+&nbsp;     */
+&nbsp;    public List&lt;Event&gt; getAllEvents(){
+<b class="fc">&nbsp;        return eventRepository.findAll();</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Méthode pour récupérer un évènement par son id
+&nbsp;     * @param id Identifiant de l&#39;évènement recherché
+&nbsp;     * @return Évènement correspondant à l&#39;id
+&nbsp;     */
+&nbsp;    public Event getEventById(String id){
+<b class="fc">&nbsp;        Optional&lt;Event&gt; event = eventRepository.findById(id);</b>
+&nbsp;
+<b class="pc">&nbsp;        if(event.isPresent()){</b>
+<b class="fc">&nbsp;            return event.get();</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        throw new EventNotFoundException(&quot;L&#39;évènement que vous cherchez n&#39;existe pas.&quot;);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Méthode pour créer un évènement
+&nbsp;     * @param imageFile Image de l&#39;évènement
+&nbsp;     * @param event informations de l&#39;évènement à créer
+&nbsp;     * @return L&#39;évènement enregistré en base de données
+&nbsp;     * @throws IOException
+&nbsp;     */
+&nbsp;    public Event createEvent(MultipartFile imageFile, Event event) throws IOException {
+<b class="fc">&nbsp;        event.setImage(imageService.uploadImage(imageFile, UPLOAD_DIRECTORY));</b>
+<b class="fc">&nbsp;        event.setTicketLeft(event.getAmount());</b>
+<b class="fc">&nbsp;        Event createdEvent = eventRepository.save(event);</b>
+&nbsp;
+<b class="fc">&nbsp;        return createdEvent;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Méthode pour créer l&#39;évènement initial au lancement de l&#39;application
+&nbsp;     * @param event Informations de l&#39;évènement à créer
+&nbsp;     * @return l&#39;évènement enregistré en base de données
+&nbsp;     */
+&nbsp;    public Event createInitialEvent(Event event){
+<b class="fc">&nbsp;        Event createdEvent = eventRepository.save(event);</b>
+&nbsp;
+<b class="fc">&nbsp;        return createdEvent;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Méthode pour mettre à jour un évènement
+&nbsp;     * @param id Identifiant de l&#39;évènement à modifier
+&nbsp;     * @param event Informations à mettre à jour
+&nbsp;     * @return L&#39;évènement enregistré en base de données
+&nbsp;     */
+&nbsp;    public Event updateEvent(String id, Event event){
+<b class="fc">&nbsp;        Optional&lt;Event&gt; eventInDatabase = eventRepository.findById(id);</b>
+&nbsp;
+<b class="pc">&nbsp;        if(eventInDatabase.isPresent()){</b>
+<b class="fc">&nbsp;            Event eventToUpdate = eventInDatabase.get();</b>
+&nbsp;
+<b class="fc">&nbsp;            eventToUpdate.setName(event.getName());</b>
+<b class="fc">&nbsp;            eventToUpdate.setDescription(event.getDescription());</b>
+<b class="fc">&nbsp;            eventToUpdate.setDate(event.getDate());</b>
+<b class="fc">&nbsp;            eventToUpdate.setAmount(event.getAmount());</b>
+<b class="fc">&nbsp;            eventToUpdate.setSoloPrice(event.getSoloPrice());</b>
+<b class="fc">&nbsp;            eventToUpdate.setDuoPrice(event.getDuoPrice());</b>
+<b class="fc">&nbsp;            eventToUpdate.setFamilyPrice(event.getFamilyPrice());</b>
+&nbsp;
+<b class="fc">&nbsp;            Event eventUpdated = eventRepository.save(eventToUpdate);</b>
+&nbsp;
+<b class="fc">&nbsp;            return eventUpdated;</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        throw new EventNotFoundException(&quot;L&#39;évènement que vous cherchez n&#39;existe pas.&quot;);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Méthode pour mettre à jour l&#39;image pour un évènement
+&nbsp;     * @param imageFile Image à mettre à jour
+&nbsp;     * @param id Identifiant de l&#39;évènement à mettre à jour
+&nbsp;     * @return l&#39;évènement enregistré en base de données
+&nbsp;     * @throws IOException
+&nbsp;     */
+&nbsp;    public Event updateImage(MultipartFile imageFile, String id) throws IOException {
+<b class="fc">&nbsp;        Event event = getEventById(id);</b>
+<b class="fc">&nbsp;        event.setImage(imageService.updateImage(imageFile, UPLOAD_DIRECTORY, event.getImage()));</b>
+<b class="fc">&nbsp;        Event updatedEvent = eventRepository.save(event);</b>
+<b class="fc">&nbsp;        return updatedEvent;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Méthode pour effacer un événement
+&nbsp;     * @param id Identifiant de l&#39;évènement à supprimer
+&nbsp;     * @throws IOException
+&nbsp;     */
+&nbsp;    public void deleteEvent(String id) throws IOException {
+<b class="fc">&nbsp;        Optional&lt;Event&gt; eventToDelete = eventRepository.findById(id);</b>
+&nbsp;
+<b class="pc">&nbsp;        if(eventToDelete.isPresent()){</b>
+<b class="fc">&nbsp;            Event event = eventToDelete.get();</b>
+<b class="fc">&nbsp;            imageService.deleteImage(event.getImage());</b>
+<b class="fc">&nbsp;            eventRepository.delete(event);</b>
+&nbsp;        }else{
+<b class="nc">&nbsp;            throw new EventNotFoundException(&quot;L&#39;évènement que vous cherchez n&#39;existe pas.&quot;);</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Méthode qui crée le premier évènement au lancement de l&#39;app s&#39;il n&#39;existe pas déjà
+&nbsp;     */
+&nbsp;    @EventListener(ApplicationReadyEvent.class)
+&nbsp;    public void initiateEvent() {
+<b class="pc">&nbsp;        if(eventRepository.count() == 0){</b>
+<b class="nc">&nbsp;            Event firstEvent = new Event();</b>
+<b class="nc">&nbsp;            firstEvent.setName(&quot;Finale football masculin France - Espagne&quot;);</b>
+<b class="nc">&nbsp;            firstEvent.setDescription(&quot;Après un parcours impressionnant la France de Thierry Henry emmenée par Lacazette ainsi que l&#39;Espagne se retrouvent en finale pour se disputer l&#39;or pendant un match qui restera sans aucun doute dans les mémoires.&quot;);</b>
+<b class="nc">&nbsp;            firstEvent.setAmount(44260);</b>
+<b class="nc">&nbsp;            firstEvent.setTicketLeft(firstEvent.getAmount());</b>
+<b class="nc">&nbsp;            firstEvent.setDate(LocalDateTime.of(2024, 8, 9, 18, 0, 0));</b>
+<b class="nc">&nbsp;            firstEvent.setSoloPrice(50);</b>
+<b class="nc">&nbsp;            firstEvent.setDuoPrice(90);</b>
+<b class="nc">&nbsp;            firstEvent.setFamilyPrice(160);</b>
+<b class="nc">&nbsp;            firstEvent.setImage(&quot;/&quot; + UPLOAD_DIRECTORY +&quot;initial.jpeg&quot;);</b>
+&nbsp;
+<b class="nc">&nbsp;            createInitialEvent(firstEvent);</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2025-10-11 09:44</div>
+</div>
+</body>
+</html>

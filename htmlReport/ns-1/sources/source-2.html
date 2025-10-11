@@ -1,0 +1,259 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>Coverage Report > AuthController</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope:     <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.jeuxolympiques.billetterie.controllers</a>
+</div>
+
+<h1>Coverage Summary for Class: AuthController (com.jeuxolympiques.billetterie.controllers)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">AuthController</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (4/4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    50%
+  </span>
+  <span class="absValue">
+    (1/2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    94,3%
+  </span>
+  <span class="absValue">
+    (33/35)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.jeuxolympiques.billetterie.controllers;
+&nbsp;
+&nbsp;import com.fasterxml.jackson.annotation.JsonView;
+&nbsp;
+&nbsp;import com.jeuxolympiques.billetterie.configuration.HttpHeadersCORS;
+&nbsp;import com.jeuxolympiques.billetterie.configuration.JwtUtils;
+&nbsp;import com.jeuxolympiques.billetterie.entities.*;
+&nbsp;import com.jeuxolympiques.billetterie.exceptions.EmailPasswordInvalidException;
+&nbsp;import com.jeuxolympiques.billetterie.services.CustomerService;
+&nbsp;
+&nbsp;import com.jeuxolympiques.billetterie.services.EventService;
+&nbsp;import com.jeuxolympiques.billetterie.services.UserService;
+&nbsp;import lombok.RequiredArgsConstructor;
+&nbsp;import lombok.extern.slf4j.Slf4j;
+&nbsp;
+&nbsp;import org.slf4j.Logger;
+&nbsp;import org.slf4j.LoggerFactory;
+&nbsp;import org.springframework.http.HttpStatus;
+&nbsp;import org.springframework.http.MediaType;
+&nbsp;import org.springframework.http.ResponseEntity;
+&nbsp;import org.springframework.security.authentication.AuthenticationManager;
+&nbsp;import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+&nbsp;import org.springframework.security.core.Authentication;
+&nbsp;import org.springframework.security.core.AuthenticationException;
+&nbsp;import org.springframework.security.crypto.password.PasswordEncoder;
+&nbsp;import org.springframework.web.bind.annotation.*;
+&nbsp;import org.springframework.web.multipart.MultipartFile;
+&nbsp;
+&nbsp;import java.io.IOException;
+&nbsp;import java.util.HashMap;
+&nbsp;import java.util.Map;
+&nbsp;
+&nbsp;@RestController
+&nbsp;@RequestMapping(&quot;/api/auth&quot;)
+&nbsp;@RequiredArgsConstructor
+&nbsp;@CrossOrigin(origins = &quot;${URL_FRONT}&quot;)
+<b class="fc">&nbsp;@Slf4j</b>
+&nbsp;public class AuthController {
+&nbsp;
+&nbsp;    private final UserService userService;
+&nbsp;    private final CustomerService customerService;
+&nbsp;    private final EventService eventService;
+&nbsp;
+&nbsp;    private final JwtUtils jwtUtils;
+&nbsp;    private final PasswordEncoder passwordEncoder;
+&nbsp;    private final AuthenticationManager authenticationManager;
+&nbsp;    private final HttpHeadersCORS headersCORS = new HttpHeadersCORS();
+<b class="fc">&nbsp;    private static final Logger logger = LoggerFactory.getLogger(AuthController.class);</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Requête pour créer un compte et réserver sa place
+&nbsp;     * @param customer Informations du client
+&nbsp;     * @param event évènement du ticket pour lequel le client crée un compte
+&nbsp;     * @param imageFile Photo de vérification du client
+&nbsp;     * @return
+&nbsp;     * @throws IOException
+&nbsp;     */
+&nbsp;    @PostMapping(path = &quot;/register&quot;, consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
+&nbsp;    public ResponseEntity&lt;Map&lt;String, String&gt;&gt; register(@RequestPart Customer customer, @RequestPart Event event, @RequestPart(&quot;photo&quot;) MultipartFile imageFile) throws IOException {
+&nbsp;
+&nbsp;        // On force l&#39;adresse mail en minuscule
+<b class="fc">&nbsp;        customer.setUsername(customer.getUsername().toLowerCase());</b>
+<b class="fc">&nbsp;        Event eventInDataBase = eventService.getEventById(event.getId());</b>
+&nbsp;
+<b class="fc">&nbsp;        Customer createdCustomer = customerService.createCustomer(customer, eventInDataBase, passwordEncoder, imageFile);</b>
+&nbsp;
+&nbsp;        // On crée la réponse à renvoyer
+<b class="fc">&nbsp;        Map&lt;String, String&gt; response = new HashMap&lt;&gt;();</b>
+<b class="fc">&nbsp;        response.put(&quot;created&quot;, STR.&quot;Bienvenue \{customer.getFirstName()}, votre réservation a bien été créée. Veuillez patienter le temps qu&#39;un modérateur valide votre identité.&quot;);</b>
+&nbsp;
+<b class="fc">&nbsp;        logger.info(STR.&quot;La réservation de \{customer.getUsername()} a bien été créée.&quot;);</b>
+&nbsp;
+<b class="fc">&nbsp;        return ResponseEntity</b>
+<b class="fc">&nbsp;                .status(HttpStatus.CREATED)</b>
+<b class="fc">&nbsp;                .header(String.valueOf(headersCORS.headers()))</b>
+<b class="fc">&nbsp;                .body(response);</b>
+&nbsp;
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Requête pour se connecter au service
+&nbsp;     * @param user Informations de connection
+&nbsp;     * @return
+&nbsp;     */
+&nbsp;    @PostMapping(&quot;/login&quot;)
+&nbsp;    public ResponseEntity&lt;Map&lt;String, Object&gt;&gt; login(@RequestBody User user) {
+&nbsp;
+&nbsp;        // On force l&#39;adresse mail en minuscule
+<b class="fc">&nbsp;        user.setUsername(user.getUsername().toLowerCase());</b>
+&nbsp;
+&nbsp;        try {
+&nbsp;            // On récupère les informations d&#39;authentification
+<b class="fc">&nbsp;            Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(user.getUsername(), user.getPassword()));</b>
+&nbsp;
+&nbsp;            // Si les informations sont cohérentes
+<b class="pc">&nbsp;            if(authentication.isAuthenticated()) {</b>
+&nbsp;
+&nbsp;                // On crée un token d&#39;authentification
+<b class="fc">&nbsp;                Map&lt;String, Object&gt; authData = new HashMap&lt;&gt;();</b>
+<b class="fc">&nbsp;                authData.put(&quot;token&quot;, jwtUtils.generateToken(user.getUsername()));</b>
+<b class="fc">&nbsp;                authData.put(&quot;type&quot;, &quot;Bearer&quot;);</b>
+&nbsp;
+&nbsp;                // On retourne le jeton
+<b class="fc">&nbsp;                logger.info(STR.&quot;L&#39;utilisateur \{user.getUsername()} s&#39;est connecté avec succès.&quot;);</b>
+&nbsp;
+<b class="fc">&nbsp;                return ResponseEntity</b>
+<b class="fc">&nbsp;                        .status(HttpStatus.OK)</b>
+<b class="fc">&nbsp;                        .header(String.valueOf(headersCORS.headers()))</b>
+<b class="fc">&nbsp;                        .body(authData);</b>
+&nbsp;            }
+&nbsp;            // Sinon, on renvoie une erreur
+<b class="nc">&nbsp;            throw new EmailPasswordInvalidException(&quot;Adresse e-mail ou mot de passe invalide.&quot;);</b>
+&nbsp;
+&nbsp;        } catch (AuthenticationException e) {
+<b class="nc">&nbsp;            throw new EmailPasswordInvalidException(&quot;Adresse e-mail ou mot de passe invalide.&quot;);</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Requête pour récupérer le niveau d&#39;accès d&#39;un utilisateur
+&nbsp;     * @param token Pour savoir quel utilisateur fait la requête
+&nbsp;     * @return
+&nbsp;     */
+&nbsp;    @GetMapping(&quot;/level&quot;)
+&nbsp;    @JsonView(Views.UserRole.class)
+&nbsp;    public ResponseEntity&lt;Map&lt;String, String&gt;&gt; getAuthLevel(@RequestHeader(name=&quot;Authorization&quot;) String token) {
+&nbsp;
+&nbsp;        // On crée la réponse à renvoyer
+<b class="fc">&nbsp;        Map&lt;String, String&gt; response = new HashMap&lt;&gt;();</b>
+<b class="fc">&nbsp;        String ROLE_JSON = &quot;role&quot;;</b>
+&nbsp;
+&nbsp;        // On vérifie l&#39;information de rôle à partir du token
+<b class="fc">&nbsp;        String username = jwtUtils.extractUsername(token.substring(7));</b>
+<b class="fc">&nbsp;        User user = userService.getUserByUsername(username);</b>
+<b class="fc">&nbsp;        response.put(ROLE_JSON, user.getRole());</b>
+<b class="fc">&nbsp;        logger.info(STR.&quot;L&#39;utilisateur \{user.getUsername()} est connecté avec le rôle \{user.getRole()}.&quot;);</b>
+&nbsp;
+<b class="fc">&nbsp;        return ResponseEntity</b>
+<b class="fc">&nbsp;                .status(HttpStatus.OK)</b>
+<b class="fc">&nbsp;                .header(String.valueOf(headersCORS.headers()))</b>
+<b class="fc">&nbsp;                .body(response);</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2025-10-10 22:19</div>
+</div>
+</body>
+</html>

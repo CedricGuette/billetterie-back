@@ -1,0 +1,261 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>Coverage Report > AdminController</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope:     <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.jeuxolympiques.billetterie.controllers</a>
+</div>
+
+<h1>Coverage Summary for Class: AdminController (com.jeuxolympiques.billetterie.controllers)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">AdminController</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (7/7)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (45/45)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.jeuxolympiques.billetterie.controllers;
+&nbsp;
+&nbsp;import com.fasterxml.jackson.annotation.JsonView;
+&nbsp;import com.jeuxolympiques.billetterie.configuration.HttpHeadersCORS;
+&nbsp;import com.jeuxolympiques.billetterie.configuration.JwtUtils;
+&nbsp;import com.jeuxolympiques.billetterie.entities.*;
+&nbsp;import com.jeuxolympiques.billetterie.services.AdminService;
+&nbsp;import com.jeuxolympiques.billetterie.services.ModeratorService;
+&nbsp;import com.jeuxolympiques.billetterie.services.SecurityService;
+&nbsp;import com.jeuxolympiques.billetterie.services.UserService;
+&nbsp;import lombok.RequiredArgsConstructor;
+&nbsp;import org.slf4j.Logger;
+&nbsp;import org.slf4j.LoggerFactory;
+&nbsp;import org.springframework.http.HttpStatus;
+&nbsp;import org.springframework.http.ResponseEntity;
+&nbsp;import org.springframework.web.bind.annotation.*;
+&nbsp;
+&nbsp;import java.util.*;
+&nbsp;
+&nbsp;@RestController
+&nbsp;@RequestMapping(&quot;/api/admin&quot;)
+&nbsp;@RequiredArgsConstructor
+&nbsp;@CrossOrigin(origins = &quot;${URL_FRONT}&quot;)
+&nbsp;public class AdminController {
+&nbsp;
+&nbsp;    private final UserService userService;
+&nbsp;    private final ModeratorService moderatorService;
+&nbsp;    private final SecurityService securityService;
+&nbsp;    private final AdminService adminService;
+&nbsp;
+&nbsp;    private final JwtUtils jwtUtils;
+&nbsp;    private final HttpHeadersCORS headersCORS = new HttpHeadersCORS();
+<b class="fc">&nbsp;    private static final Logger logger = LoggerFactory.getLogger(AdminController.class);</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * On crée la requête pour récupérer la liste des utilisateurs
+&nbsp;     * @return ResponseEntity liste des utilisateurs
+&nbsp;     */
+&nbsp;    @GetMapping(&quot;/users&quot;)
+&nbsp;    @JsonView(Views.Admin.class)
+&nbsp;    public ResponseEntity&lt;List&lt;User&gt;&gt; getAllUsers() {
+&nbsp;
+<b class="fc">&nbsp;        logger.info(&quot;L&#39;administrateur a récupéré l&#39;ensemble des utilisateurs&quot;);</b>
+&nbsp;
+<b class="fc">&nbsp;        return ResponseEntity</b>
+<b class="fc">&nbsp;                .status(HttpStatus.OK)</b>
+<b class="fc">&nbsp;                .header(String.valueOf(headersCORS.headers()))</b>
+<b class="fc">&nbsp;                .body(userService.getAllUsers());</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Requête pour renvoyer l&#39;information si l&#39;administrateur se connecte pour la première fois
+&nbsp;     * @param token jeton JWT
+&nbsp;     * @return Booléen vrai si l&#39;administrateur se connecte pour la première fois
+&nbsp;     */
+&nbsp;    @GetMapping(&quot;/firstLogin&quot;)
+&nbsp;    public ResponseEntity&lt;Boolean&gt; isFirstLogin(@RequestHeader(name=&quot;Authorization&quot;) String token){
+<b class="fc">&nbsp;        String username = jwtUtils.extractUsername(token.substring(7));</b>
+<b class="fc">&nbsp;        User user = userService.getUserByUsername(username);</b>
+&nbsp;
+<b class="fc">&nbsp;        return ResponseEntity</b>
+<b class="fc">&nbsp;                .status(HttpStatus.OK)</b>
+<b class="fc">&nbsp;                .header(String.valueOf(headersCORS.headers()))</b>
+<b class="fc">&nbsp;                .body(adminService.isFirstLogin(user.getId()));</b>
+&nbsp;
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * On crée la requête pour changer de mot de passe
+&nbsp;     * @param request objet envoyé contenant l&#39;ancien et le nouveau mot de passe
+&nbsp;     * @param token jeton JWT
+&nbsp;     * @return ResponseEntity updated
+&nbsp;     */
+&nbsp;    @PutMapping(&quot;/password/change&quot;)
+&nbsp;    public ResponseEntity&lt;Map&lt;String, String&gt;&gt; editPassword(@RequestBody Map&lt;String, String&gt; request, @RequestHeader(name=&quot;Authorization&quot;) String token) {
+<b class="fc">&nbsp;        String username = jwtUtils.extractUsername(token.substring(7));</b>
+<b class="fc">&nbsp;        User user = userService.getUserByUsername(username);</b>
+&nbsp;
+<b class="fc">&nbsp;        adminService.editPassword(user.getId(), request.get(&quot;existingPassword&quot;), request.get(&quot;newPassword&quot;));</b>
+&nbsp;
+&nbsp;        //On crée la variable qui va recevoir la réponse
+<b class="fc">&nbsp;        Map&lt;String, String&gt; response = new HashMap&lt;&gt;();</b>
+<b class="fc">&nbsp;        response.put(&quot;updated&quot;, &quot;Le mot de passe a bien été mis à jour.&quot;);</b>
+&nbsp;
+<b class="fc">&nbsp;        logger.info(STR.&quot;l&#39;administrateur&#39; \{user.getUsername()} a changé de mot de passe avec succès.&quot;);</b>
+&nbsp;
+<b class="fc">&nbsp;        return ResponseEntity</b>
+<b class="fc">&nbsp;                .status(HttpStatus.OK)</b>
+<b class="fc">&nbsp;                .header(String.valueOf(headersCORS.headers()))</b>
+<b class="fc">&nbsp;                .body(response);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * On crée la requête pour créer un modérateur
+&nbsp;     * @param moderator nom d&#39;utilisateur et mot de passe
+&nbsp;     * @return ResponseEntity created
+&nbsp;     */
+&nbsp;    @PostMapping(&quot;/createModerator&quot;)
+&nbsp;    public ResponseEntity&lt;Map&lt;String, String&gt;&gt; createModerator(@RequestBody Moderator moderator) {
+&nbsp;
+&nbsp;        //On crée la variable qui va recevoir la réponse
+<b class="fc">&nbsp;        Map&lt;String, String&gt; response = new HashMap&lt;&gt;();</b>
+<b class="fc">&nbsp;        response.put(&quot;created&quot;, &quot;Le modérateur a bien été créé.&quot;);</b>
+&nbsp;
+<b class="fc">&nbsp;        moderatorService.createModerator(moderator);</b>
+&nbsp;
+<b class="fc">&nbsp;        logger.info(STR.&quot;le modérateur \{moderator.getUsername()} a été créé.&quot;);</b>
+&nbsp;
+<b class="fc">&nbsp;        return ResponseEntity</b>
+<b class="fc">&nbsp;                .status(HttpStatus.CREATED)</b>
+<b class="fc">&nbsp;                .header(String.valueOf(headersCORS.headers()))</b>
+<b class="fc">&nbsp;                .body(response);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * On crée la requête pour créer un agent de sécurité
+&nbsp;     * @param security nom d&#39;utilisateur et mot de passe
+&nbsp;     * @return ResponseEntity created
+&nbsp;     */
+&nbsp;    @PostMapping(&quot;/createSecurity&quot;)
+&nbsp;    public ResponseEntity&lt;Map&lt;String, String&gt;&gt; createSecurity(@RequestBody Security security) {
+&nbsp;
+<b class="fc">&nbsp;        securityService.createSecurity(security);</b>
+&nbsp;
+&nbsp;        // On crée la variable qui va accueillir la réponse
+<b class="fc">&nbsp;        Map&lt;String, String&gt; response = new HashMap&lt;&gt;();</b>
+<b class="fc">&nbsp;        response.put(&quot;created&quot;, &quot;L&#39;agent de sécurité a bien été créé.&quot;);</b>
+&nbsp;
+<b class="fc">&nbsp;        logger.info(STR.&quot;L&#39;agent de sécurité \{security.getUsername()} a bien été créé.&quot;);</b>
+&nbsp;
+<b class="fc">&nbsp;        return ResponseEntity</b>
+<b class="fc">&nbsp;                .status(HttpStatus.CREATED)</b>
+<b class="fc">&nbsp;                .header(String.valueOf(headersCORS.headers()))</b>
+<b class="fc">&nbsp;                .body(response);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * On crée la requête pour effacer un utilisateur
+&nbsp;     * @param id identifiant de l&#39;utilisateur à supprimer
+&nbsp;     * @return ResponseEntity deleted
+&nbsp;     */
+&nbsp;    @DeleteMapping(&quot;users/{id}&quot;)
+&nbsp;    public ResponseEntity&lt;Map&lt;String, String&gt;&gt; deleteUserById (@PathVariable String id) {
+&nbsp;        // On récupère l&#39;utilisateur grâce à l&#39;id
+<b class="fc">&nbsp;        User user = userService.getUserById(id);</b>
+&nbsp;
+&nbsp;        // On crée la variable qui va recevoir la réponse
+<b class="fc">&nbsp;        Map&lt;String, String&gt; response = adminService.deleteUser(user);</b>
+&nbsp;
+<b class="fc">&nbsp;        logger.info(STR.&quot;L&#39;utilisateur \{user.getUsername()} a bien été supprimé.&quot;);</b>
+&nbsp;
+<b class="fc">&nbsp;        return ResponseEntity</b>
+<b class="fc">&nbsp;                .status(HttpStatus.OK)</b>
+<b class="fc">&nbsp;                .header(String.valueOf(headersCORS.headers()))</b>
+<b class="fc">&nbsp;                .body(response);</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2025-10-11 09:44</div>
+</div>
+</body>
+</html>

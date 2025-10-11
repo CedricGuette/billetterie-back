@@ -1,0 +1,272 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>Coverage Report > ResourcesOnServerController</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope:     <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.jeuxolympiques.billetterie.controllers</a>
+</div>
+
+<h1>Coverage Summary for Class: ResourcesOnServerController (com.jeuxolympiques.billetterie.controllers)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">ResourcesOnServerController</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    25%
+  </span>
+  <span class="absValue">
+    (1/4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/8)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    1,9%
+  </span>
+  <span class="absValue">
+    (1/52)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.jeuxolympiques.billetterie.controllers;
+&nbsp;
+&nbsp;import com.jeuxolympiques.billetterie.configuration.HttpHeadersCORS;
+&nbsp;import com.jeuxolympiques.billetterie.configuration.JwtUtils;
+&nbsp;import com.jeuxolympiques.billetterie.entities.Customer;
+&nbsp;import com.jeuxolympiques.billetterie.entities.Moderator;
+&nbsp;import com.jeuxolympiques.billetterie.entities.Ticket;
+&nbsp;import com.jeuxolympiques.billetterie.exceptions.FileNotFoundException;
+&nbsp;import com.jeuxolympiques.billetterie.exceptions.UnauthorizedFileAccessException;
+&nbsp;import com.jeuxolympiques.billetterie.services.CustomerService;
+&nbsp;import com.jeuxolympiques.billetterie.services.ModeratorService;
+&nbsp;import lombok.RequiredArgsConstructor;
+&nbsp;import org.slf4j.Logger;
+&nbsp;import org.slf4j.LoggerFactory;
+&nbsp;import org.springframework.core.io.Resource;
+&nbsp;import org.springframework.core.io.UrlResource;
+&nbsp;import org.springframework.http.HttpStatus;
+&nbsp;import org.springframework.http.MediaType;
+&nbsp;import org.springframework.http.ResponseEntity;
+&nbsp;import org.springframework.web.bind.annotation.*;
+&nbsp;
+&nbsp;import java.net.MalformedURLException;
+&nbsp;import java.nio.file.Path;
+&nbsp;import java.nio.file.Paths;
+&nbsp;import java.util.List;
+&nbsp;
+&nbsp;@RestController
+&nbsp;@RequestMapping(&quot;&quot;)
+&nbsp;@RequiredArgsConstructor
+&nbsp;@CrossOrigin(origins = &quot;${URL_FRONT}&quot;)
+&nbsp;public class ResourcesOnServerController {
+&nbsp;
+&nbsp;    private final ModeratorService moderatorService;
+&nbsp;    private final CustomerService customerService;
+&nbsp;
+&nbsp;    private final JwtUtils jwtUtils ;
+&nbsp;    private final HttpHeadersCORS headersCORS = new HttpHeadersCORS();
+<b class="fc">&nbsp;    private static final Logger logger = LoggerFactory.getLogger(ResourcesOnServerController.class);</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Requête pour récupérer les photos de vérification
+&nbsp;     * @param filename Nom du fichier à récupérer sur le serveur
+&nbsp;     * @param token Pour vérifier l&#39;identité du requêteur
+&nbsp;     * @return Le fichier demandé
+&nbsp;     */
+&nbsp;    @GetMapping(&quot;/uploads/verification/{filename}&quot;)
+&nbsp;    public ResponseEntity&lt;Resource&gt; getImage(@PathVariable String filename, @RequestHeader(name=&quot;Authorization&quot;) String token) {
+&nbsp;
+<b class="nc">&nbsp;        String username = jwtUtils.extractUsername(token.substring(7));</b>
+<b class="nc">&nbsp;        Moderator moderator = moderatorService.getModeratorByUsername(username);</b>
+&nbsp;
+<b class="nc">&nbsp;        logger.info(STR.&quot;Le modérateur \{moderator.getUsername()} essaye de récupérer l&#39;image \{filename}.&quot;);</b>
+&nbsp;
+&nbsp;        try {
+<b class="nc">&nbsp;            Path filePath = Paths.get(&quot;src/main/resources/static/uploads/verification/&quot;).resolve(filename);</b>
+<b class="nc">&nbsp;            Resource resource = new UrlResource(filePath.toUri());</b>
+&nbsp;
+<b class="nc">&nbsp;            if (resource.exists()) {</b>
+&nbsp;
+<b class="nc">&nbsp;                logger.info(STR.&quot;L&#39;image \{filename} a été récupéré avec succès par le modérateur \{moderator.getUsername()}.&quot;);</b>
+&nbsp;
+<b class="nc">&nbsp;                return ResponseEntity.ok()</b>
+<b class="nc">&nbsp;                        .contentType(MediaType.IMAGE_JPEG)</b>
+<b class="nc">&nbsp;                        .header(String.valueOf(headersCORS.headers()))</b>
+<b class="nc">&nbsp;                        .body(resource);</b>
+&nbsp;            } else {
+<b class="nc">&nbsp;                throw new FileNotFoundException(STR.&quot;L&#39;image \{filename} recherchée pas le modérateur \{moderator.getUsername()} n&#39;a pas été trouvée.&quot;);</b>
+&nbsp;            }
+&nbsp;        } catch (MalformedURLException e) {
+<b class="nc">&nbsp;            logger.error(e.getMessage());</b>
+&nbsp;
+<b class="nc">&nbsp;            return ResponseEntity</b>
+<b class="nc">&nbsp;                    .status(HttpStatus.INTERNAL_SERVER_ERROR)</b>
+<b class="nc">&nbsp;                    .header(String.valueOf(headersCORS.headers()))</b>
+<b class="nc">&nbsp;                    .build();</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Requête pour récupérer les photos des évènements
+&nbsp;     * @param filename Nom du fichier
+&nbsp;     * @return Image demandée
+&nbsp;     */
+&nbsp;    @GetMapping(&quot;/uploads/event/{filename}&quot;)
+&nbsp;    public ResponseEntity&lt;Resource&gt; getEventImage(@PathVariable String filename) {
+&nbsp;
+&nbsp;        try {
+<b class="nc">&nbsp;            Path filePath = Paths.get(&quot;src/main/resources/static/uploads/event/&quot;).resolve(filename);</b>
+<b class="nc">&nbsp;            Resource resource = new UrlResource(filePath.toUri());</b>
+&nbsp;
+<b class="nc">&nbsp;            if (resource.exists()) {</b>
+&nbsp;
+<b class="nc">&nbsp;                return ResponseEntity.ok()</b>
+<b class="nc">&nbsp;                        .contentType(MediaType.IMAGE_JPEG)</b>
+<b class="nc">&nbsp;                        .header(String.valueOf(headersCORS.headers()))</b>
+<b class="nc">&nbsp;                        .body(resource);</b>
+&nbsp;            } else {
+<b class="nc">&nbsp;                throw new FileNotFoundException(STR.&quot;L&#39;image \{filename} n&#39;a pas été trouvée.&quot;);</b>
+&nbsp;            }
+&nbsp;        } catch (MalformedURLException e) {
+<b class="nc">&nbsp;            logger.error(e.getMessage());</b>
+&nbsp;
+<b class="nc">&nbsp;            return ResponseEntity</b>
+<b class="nc">&nbsp;                    .status(HttpStatus.INTERNAL_SERVER_ERROR)</b>
+<b class="nc">&nbsp;                    .header(String.valueOf(headersCORS.headers()))</b>
+<b class="nc">&nbsp;                    .build();</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Requête pour récupérer les tickets en PDF
+&nbsp;     * @param filename Nom du fichier
+&nbsp;     * @param token Pour vérifier l&#39;identité du requêteur
+&nbsp;     * @return Le pdf demandé
+&nbsp;     */
+&nbsp;    @GetMapping(&quot;/tickets/pdf/{filename}&quot;)
+&nbsp;    public ResponseEntity&lt;Resource&gt; getPdf(@PathVariable String filename, @RequestHeader(name=&quot;Authorization&quot;) String token) {
+&nbsp;
+&nbsp;        // On récupère les informations pour savoir qui veut consulter le pdf
+<b class="nc">&nbsp;        String username = jwtUtils.extractUsername(token.substring(7));</b>
+&nbsp;
+<b class="nc">&nbsp;        Customer customer = customerService.getCustomerByUsername(username);</b>
+&nbsp;
+<b class="nc">&nbsp;        List&lt;Ticket&gt; tickets = customer.getTickets();</b>
+&nbsp;
+<b class="nc">&nbsp;        List&lt;Ticket&gt; result = tickets.stream()</b>
+<b class="nc">&nbsp;                .filter(ticket -&gt; ticket.getTicketUrl().equals(STR.&quot;tickets/pdf/\{filename}&quot;))</b>
+<b class="nc">&nbsp;                .toList();</b>
+&nbsp;
+<b class="nc">&nbsp;        if(!(result.isEmpty())) {</b>
+&nbsp;            try {
+<b class="nc">&nbsp;                Path filePath = Paths.get(&quot;src/main/resources/static/tickets/pdf/&quot;).resolve(filename);</b>
+<b class="nc">&nbsp;                Resource resource = new UrlResource(filePath.toUri());</b>
+&nbsp;
+<b class="nc">&nbsp;                if (resource.exists()) {</b>
+&nbsp;
+&nbsp;                    return ResponseEntity
+<b class="nc">&nbsp;                            .ok()</b>
+<b class="nc">&nbsp;                            .contentType(MediaType.APPLICATION_PDF)</b>
+<b class="nc">&nbsp;                            .header(String.valueOf(headersCORS.headers()))</b>
+<b class="nc">&nbsp;                            .body(resource);</b>
+&nbsp;                } else {
+<b class="nc">&nbsp;                    throw new FileNotFoundException(STR.&quot;Le PDF \{filename} recherchée pas le client \{customer.getUsername()} n&#39;a pas été trouvée.&quot;);</b>
+&nbsp;                }
+&nbsp;            } catch (MalformedURLException e) {
+<b class="nc">&nbsp;                logger.error(e.getMessage());</b>
+&nbsp;
+<b class="nc">&nbsp;                return ResponseEntity</b>
+<b class="nc">&nbsp;                        .status(HttpStatus.INTERNAL_SERVER_ERROR)</b>
+<b class="nc">&nbsp;                        .header(String.valueOf(headersCORS.headers()))</b>
+<b class="nc">&nbsp;                        .build();</b>
+&nbsp;            }
+&nbsp;        }
+<b class="nc">&nbsp;        throw new UnauthorizedFileAccessException(STR.&quot;L&#39;utilisateur \{customer.getUsername()} essaie d&#39;accèder à un ticket en pdf sans l&#39;autorisation.&quot;);</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2025-10-11 09:44</div>
+</div>
+</body>
+</html>

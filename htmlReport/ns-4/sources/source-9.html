@@ -1,0 +1,145 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>Coverage Report > Ticket</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope:     <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.jeuxolympiques.billetterie.entities</a>
+</div>
+
+<h1>Coverage Summary for Class: Ticket (com.jeuxolympiques.billetterie.entities)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+</tr>
+  <tr>
+    <td class="name">Ticket$HibernateInstantiator</td>
+  </tr>
+  <tr>
+    <td class="name">Ticket$HibernateProxy</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.jeuxolympiques.billetterie.entities;
+&nbsp;
+&nbsp;import com.fasterxml.jackson.annotation.JsonBackReference;
+&nbsp;import com.fasterxml.jackson.annotation.JsonIgnore;
+&nbsp;import com.fasterxml.jackson.annotation.JsonView;
+&nbsp;import jakarta.persistence.*;
+&nbsp;import lombok.AllArgsConstructor;
+&nbsp;import lombok.Data;
+&nbsp;import lombok.NoArgsConstructor;
+&nbsp;import org.hibernate.annotations.UuidGenerator;
+&nbsp;
+&nbsp;import java.time.LocalDateTime;
+&nbsp;
+&nbsp;@Entity
+&nbsp;@Table(name=&quot;tickets&quot;)
+&nbsp;@Data
+&nbsp;@AllArgsConstructor
+&nbsp;@NoArgsConstructor
+&nbsp;public class Ticket {
+&nbsp;
+&nbsp;    @Id
+&nbsp;    @UuidGenerator
+&nbsp;    @JsonView({Views.Customer.class, Views.Admin.class})
+&nbsp;    private String id;
+&nbsp;
+&nbsp;    @JsonView({Views.Customer.class, Views.Admin.class})
+&nbsp;    private Integer howManyTickets;
+&nbsp;
+&nbsp;    @JsonView({Views.Customer.class, Views.Admin.class})
+&nbsp;    private Boolean ticketIsPayed;
+&nbsp;
+&nbsp;    @JsonView({Views.Admin.class})
+&nbsp;    private Boolean ticketIsUsed;
+&nbsp;
+&nbsp;    @JsonView({Views.Admin.class})
+&nbsp;    private String sellingKey;
+&nbsp;
+&nbsp;    private String qrCodeUrl;
+&nbsp;
+&nbsp;    @JsonView({Views.Customer.class})
+&nbsp;    private String sessionId;
+&nbsp;
+&nbsp;    @JsonView({Views.Customer.class})
+&nbsp;    private String sessionClientSecret;
+&nbsp;
+&nbsp;    @JsonView({Views.Customer.class})
+&nbsp;    private LocalDateTime sessionCreatedDate;
+&nbsp;
+&nbsp;    @JsonView(Views.Customer.class)
+&nbsp;    private String ticketUrl;
+&nbsp;
+&nbsp;    @JsonView({Views.Customer.class, Views.Admin.class})
+&nbsp;    private LocalDateTime ticketCreatedDate;
+&nbsp;
+&nbsp;    @JsonView(Views.Admin.class)
+&nbsp;    private LocalDateTime ticketValidationDate;
+&nbsp;
+&nbsp;    @JsonView(Views.Admin.class)
+&nbsp;    @ManyToOne(cascade = CascadeType.ALL)
+&nbsp;    @JoinColumn(name = &quot;security_id&quot;)
+&nbsp;    private Security security;
+&nbsp;
+&nbsp;    @ManyToOne(cascade = CascadeType.ALL)
+&nbsp;    @JoinColumn(name=&quot;customer_id&quot;)
+&nbsp;    private Customer customer;
+&nbsp;
+&nbsp;    @JsonView({Views.Customer.class, Views.Admin.class})
+&nbsp;    @ManyToOne(cascade = CascadeType.ALL)
+&nbsp;    @JoinColumn(name = &quot;event_id&quot;)
+&nbsp;    private Event event;
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2025-10-11 09:44</div>
+</div>
+</body>
+</html>

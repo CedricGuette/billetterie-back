@@ -1,0 +1,158 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>Coverage Report > SecurityController</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope:     <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.jeuxolympiques.billetterie.controllers</a>
+</div>
+
+<h1>Coverage Summary for Class: SecurityController (com.jeuxolympiques.billetterie.controllers)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">SecurityController</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (9/9)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.jeuxolympiques.billetterie.controllers;
+&nbsp;
+&nbsp;import com.jeuxolympiques.billetterie.configuration.HttpHeadersCORS;
+&nbsp;import com.jeuxolympiques.billetterie.configuration.JwtUtils;
+&nbsp;import com.jeuxolympiques.billetterie.entities.Security;
+&nbsp;import com.jeuxolympiques.billetterie.services.SecurityService;
+&nbsp;import lombok.RequiredArgsConstructor;
+&nbsp;import org.slf4j.Logger;
+&nbsp;import org.slf4j.LoggerFactory;
+&nbsp;import org.springframework.http.HttpStatus;
+&nbsp;import org.springframework.http.ResponseEntity;
+&nbsp;import org.springframework.web.bind.annotation.*;
+&nbsp;
+&nbsp;import java.security.NoSuchAlgorithmException;
+&nbsp;import java.util.Map;
+&nbsp;
+&nbsp;@RestController
+&nbsp;@RequestMapping(&quot;/api/security&quot;)
+&nbsp;@RequiredArgsConstructor
+&nbsp;@CrossOrigin(origins = &quot;${URL_FRONT}&quot;)
+&nbsp;public class SecurityController {
+&nbsp;
+&nbsp;    private final SecurityService securityService;
+&nbsp;
+&nbsp;    private final JwtUtils jwtUtils;
+&nbsp;    private final HttpHeadersCORS headersCORS = new HttpHeadersCORS();
+<b class="fc">&nbsp;    private static final Logger logger = LoggerFactory.getLogger(SecurityController.class);</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Requête pour vérifier et valider un ticket
+&nbsp;     * @param ticketCode Chaine de caractère récupéré sur le QR code du client
+&nbsp;     * @param token Pour avoir l&#39;information de quel agent de sécurité scan le code
+&nbsp;     * @return
+&nbsp;     * @throws NoSuchAlgorithmException
+&nbsp;     */
+&nbsp;    @GetMapping(&quot;/{ticketCode}&quot;)
+&nbsp;    public ResponseEntity&lt;Map&lt;String, String&gt;&gt; isTicketValid(@PathVariable String ticketCode, @RequestHeader(name=&quot;Authorization&quot;) String token) throws NoSuchAlgorithmException {
+&nbsp;
+&nbsp;        // On récupère les information de l&#39;agent de sécurité qui scan
+<b class="fc">&nbsp;        String username = jwtUtils.extractUsername(token.substring(7));</b>
+&nbsp;
+&nbsp;        // On récupère les informations pour le log
+<b class="fc">&nbsp;        Security security = securityService.getSecurityByUsername(username);</b>
+&nbsp;
+&nbsp;        // On démande au service de comparer les informations et de renvoyer la réponse
+<b class="fc">&nbsp;        Map&lt;String, String&gt; response = securityService.isThisTicketValid(ticketCode, username);</b>
+<b class="fc">&nbsp;        logger.info(STR.&quot;L&#39;agent \{security.getUsername()} de sécurité a scanné un ticket.&quot;);</b>
+&nbsp;
+<b class="fc">&nbsp;        return ResponseEntity</b>
+<b class="fc">&nbsp;                .status(HttpStatus.OK)</b>
+<b class="fc">&nbsp;                .header(String.valueOf(headersCORS.headers()))</b>
+<b class="fc">&nbsp;                .body(response);</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2025-10-11 09:44</div>
+</div>
+</body>
+</html>

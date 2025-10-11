@@ -1,0 +1,198 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>Coverage Report > JwtUtils</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope:     <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.jeuxolympiques.billetterie.configuration</a>
+</div>
+
+<h1>Coverage Summary for Class: JwtUtils (com.jeuxolympiques.billetterie.configuration)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">JwtUtils</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    10%
+  </span>
+  <span class="absValue">
+    (1/10)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    4,3%
+  </span>
+  <span class="absValue">
+    (1/23)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.jeuxolympiques.billetterie.configuration;
+&nbsp;
+&nbsp;import io.jsonwebtoken.Claims;
+&nbsp;import io.jsonwebtoken.Jwts;
+&nbsp;import io.jsonwebtoken.security.Keys;
+&nbsp;import org.springframework.beans.factory.annotation.Value;
+&nbsp;import org.springframework.security.core.userdetails.UserDetails;
+&nbsp;import org.springframework.stereotype.Component;
+&nbsp;
+&nbsp;import javax.crypto.SecretKey;
+&nbsp;import java.nio.charset.StandardCharsets;
+&nbsp;import java.util.Date;
+&nbsp;import java.util.HashMap;
+&nbsp;import java.util.Map;
+&nbsp;import java.util.function.Function;
+&nbsp;
+&nbsp;@Component
+<b class="fc">&nbsp;public class JwtUtils {</b>
+&nbsp;
+&nbsp;    @Value(&quot;${SECRET_KEY}&quot;)
+&nbsp;    private String secretKey;
+&nbsp;
+&nbsp;    @Value(&quot;${app.expiration-time}&quot;)
+&nbsp;    private long expirationTime;
+&nbsp;
+&nbsp;    // Méthode pour générer un token
+&nbsp;    public String generateToken(String username) {
+<b class="nc">&nbsp;        Map&lt;String, Object&gt; claims = new HashMap&lt;&gt;();</b>
+<b class="nc">&nbsp;        return createToken(claims, username);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    // On met en place tous les paramètres pour créer un token
+&nbsp;    private String createToken(Map&lt;String, Object&gt; claims, String subject) {
+<b class="nc">&nbsp;        return Jwts.builder()</b>
+<b class="nc">&nbsp;                .claims(claims)</b>
+<b class="nc">&nbsp;                .subject(subject)</b>
+<b class="nc">&nbsp;                .issuedAt(new Date(System.currentTimeMillis()))</b>
+<b class="nc">&nbsp;                .expiration(new Date(System.currentTimeMillis() + expirationTime))</b>
+<b class="nc">&nbsp;                .signWith(getSignedKey())</b>
+<b class="nc">&nbsp;                .compact();</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private SecretKey getSignedKey() {
+&nbsp;
+<b class="nc">&nbsp;        return Keys.hmacShaKeyFor(secretKey.getBytes(StandardCharsets.UTF_8));</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    // Méthode pour récupérer les informations du token
+&nbsp;    public Boolean validateToken(String token, UserDetails userDetails) {
+<b class="nc">&nbsp;        String username = extractUsername(token);</b>
+<b class="nc">&nbsp;        return (username.equals(userDetails.getUsername()) &amp;&amp; !isTokenExpired(token));</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    // Méthode pour vérifier si la session du token est toujours valable
+&nbsp;    private boolean isTokenExpired(String token) {
+&nbsp;
+<b class="nc">&nbsp;        return extractExepirationDate(token).before(new Date());</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    public String extractUsername(String token){
+&nbsp;
+<b class="nc">&nbsp;        return extractClaim(token, Claims::getSubject);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private Date extractExepirationDate(String token) {
+&nbsp;
+<b class="nc">&nbsp;        return  extractClaim(token, Claims::getExpiration);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private &lt;T&gt; T extractClaim(String token, Function&lt;Claims, T&gt; claimsResolver) {
+<b class="nc">&nbsp;        final Claims claims = extractAllCaims(token);</b>
+<b class="nc">&nbsp;        return claimsResolver.apply(claims);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private Claims extractAllCaims(String token) {
+<b class="nc">&nbsp;        return Jwts.parser()</b>
+<b class="nc">&nbsp;                .verifyWith(getSignedKey())</b>
+<b class="nc">&nbsp;                .build()</b>
+<b class="nc">&nbsp;                .parseSignedClaims(token)</b>
+<b class="nc">&nbsp;                .getPayload();</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2025-10-11 09:44</div>
+</div>
+</body>
+</html>

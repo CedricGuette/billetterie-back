@@ -1,0 +1,219 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>Coverage Report > CheckoutController</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope:     <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.jeuxolympiques.billetterie.controllers</a>
+</div>
+
+<h1>Coverage Summary for Class: CheckoutController (com.jeuxolympiques.billetterie.controllers)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">CheckoutController</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (3/3)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    50%
+  </span>
+  <span class="absValue">
+    (2/4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    90,5%
+  </span>
+  <span class="absValue">
+    (19/21)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.jeuxolympiques.billetterie.controllers;
+&nbsp;
+&nbsp;import com.google.zxing.WriterException;
+&nbsp;import com.jeuxolympiques.billetterie.configuration.HttpHeadersCORS;
+&nbsp;import com.jeuxolympiques.billetterie.configuration.JwtUtils;
+&nbsp;import com.jeuxolympiques.billetterie.entities.Customer;
+&nbsp;import com.jeuxolympiques.billetterie.entities.Ticket;
+&nbsp;import com.jeuxolympiques.billetterie.exceptions.CustomerAndTicketNotMatchException;
+&nbsp;import com.jeuxolympiques.billetterie.services.CheckoutService;
+&nbsp;import com.jeuxolympiques.billetterie.services.CustomerService;
+&nbsp;import com.jeuxolympiques.billetterie.services.TicketService;
+&nbsp;import com.stripe.exception.StripeException;
+&nbsp;import lombok.RequiredArgsConstructor;
+&nbsp;import org.slf4j.Logger;
+&nbsp;import org.slf4j.LoggerFactory;
+&nbsp;import org.springframework.http.HttpStatus;
+&nbsp;import org.springframework.http.ResponseEntity;
+&nbsp;import org.springframework.web.bind.annotation.*;
+&nbsp;
+&nbsp;import java.io.IOException;
+&nbsp;import java.security.NoSuchAlgorithmException;
+&nbsp;import java.util.HashMap;
+&nbsp;import java.util.Map;
+&nbsp;
+&nbsp;@RestController
+&nbsp;@RequestMapping(&quot;/api/stripe&quot;)
+&nbsp;@RequiredArgsConstructor
+&nbsp;@CrossOrigin(origins = &quot;${URL_FRONT}&quot;)
+&nbsp;public class CheckoutController {
+&nbsp;
+&nbsp;    private final CustomerService customerService;
+&nbsp;    private final TicketService ticketService;
+&nbsp;
+&nbsp;    private final CheckoutService checkoutService;
+&nbsp;    private final JwtUtils jwtUtils;
+&nbsp;    private final HttpHeadersCORS httpHeaders = new HttpHeadersCORS();
+<b class="fc">&nbsp;    private static final Logger logger = LoggerFactory.getLogger(CheckoutController.class);</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Requête pour lancer une session de paiement Stripe
+&nbsp;     * @param token Pour connaitre l&#39;utilisateur qui requête
+&nbsp;     * @param id Identifiant du ticket pour lequel on veut ouvrir une session de paiement
+&nbsp;     * @return
+&nbsp;     * @throws StripeException
+&nbsp;     */
+&nbsp;    @PostMapping(&quot;/checkout/{id}&quot;)
+&nbsp;    public ResponseEntity&lt;Map&lt;String, String&gt;&gt; checkout(@RequestHeader(name=&quot;Authorization&quot;) String token, @PathVariable String id) throws StripeException {
+&nbsp;
+&nbsp;        // On récupère l&#39;information du token
+<b class="fc">&nbsp;        String username = jwtUtils.extractUsername(token.substring(7));</b>
+<b class="fc">&nbsp;        Customer customer = customerService.getCustomerByUsername(username);</b>
+&nbsp;
+&nbsp;        // On cherche le ticket correspondant à l&#39;id de la requête
+<b class="fc">&nbsp;        Ticket ticket = ticketService.getTicketById(id);</b>
+&nbsp;
+&nbsp;        // On vérifie la cohérence des informations
+<b class="pc">&nbsp;        if(!ticket.getCustomer().getId().equals(customer.getId())) {</b>
+<b class="nc">&nbsp;            throw new CustomerAndTicketNotMatchException(&quot;Le ticket et l&#39;utilisateur ne correspondent pas.&quot;);</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        logger.info(&quot;Une session de paiement Stripe est en cours.&quot;);</b>
+&nbsp;
+<b class="fc">&nbsp;        return ResponseEntity</b>
+<b class="fc">&nbsp;                .status(HttpStatus.OK)</b>
+<b class="fc">&nbsp;                .header(String.valueOf(httpHeaders.headers()))</b>
+<b class="fc">&nbsp;                .body(checkoutService.checkoutSessionStart(ticket));</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Requête pour vérifier que le paiement a bien été exécuté et donc pour lancer la conception du ticket
+&nbsp;     * @param token Pour connaitre l&#39;utilisateur qui requête
+&nbsp;     * @param ticketId Identifiant du ticket concerné
+&nbsp;     * @return
+&nbsp;     * @throws StripeException
+&nbsp;     * @throws IOException
+&nbsp;     * @throws NoSuchAlgorithmException
+&nbsp;     * @throws WriterException
+&nbsp;     */
+&nbsp;    @GetMapping(&quot;checkout/validation/{ticketId}&quot;)
+&nbsp;    public ResponseEntity&lt;Map&lt;String, String&gt;&gt; isCheckoutOk(@RequestHeader(name=&quot;Authorization&quot;) String token,
+&nbsp;                                                            @PathVariable(&quot;ticketId&quot;) String ticketId) throws StripeException, IOException, NoSuchAlgorithmException, WriterException {
+&nbsp;
+&nbsp;        // On récupère l&#39;information du token
+<b class="fc">&nbsp;        String username = jwtUtils.extractUsername(token.substring(7));</b>
+<b class="fc">&nbsp;        Customer customer = customerService.getCustomerByUsername(username);</b>
+&nbsp;
+&nbsp;        // On récupère le ticket
+<b class="fc">&nbsp;        Ticket ticket = ticketService.getTicketById(ticketId);</b>
+&nbsp;
+&nbsp;        // On vérifie que le ticket appartient bien à l&#39;utilisateur connecté
+<b class="pc">&nbsp;        if(ticket.getCustomer().getId().equals(customer.getId())) {</b>
+&nbsp;
+<b class="fc">&nbsp;            logger.info(STR.&quot;Le ticket de \{customer.getUsername()} a bien été payé.&quot;);</b>
+&nbsp;
+<b class="fc">&nbsp;            return ResponseEntity</b>
+<b class="fc">&nbsp;                    .status(HttpStatus.OK)</b>
+<b class="fc">&nbsp;                    .header(String.valueOf(httpHeaders.headers()))</b>
+<b class="fc">&nbsp;                    .body(checkoutService.isCheckoutPayed(ticket));</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        throw new CustomerAndTicketNotMatchException(&quot;Le ticket et l&#39;utilisateur ne correspondent pas.&quot;);</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2025-10-11 09:44</div>
+</div>
+</body>
+</html>

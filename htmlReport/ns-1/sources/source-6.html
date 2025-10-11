@@ -1,0 +1,183 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>Coverage Report > ModeratorController</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope:     <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.jeuxolympiques.billetterie.controllers</a>
+</div>
+
+<h1>Coverage Summary for Class: ModeratorController (com.jeuxolympiques.billetterie.controllers)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">ModeratorController</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (3/3)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (14/14)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.jeuxolympiques.billetterie.controllers;
+&nbsp;
+&nbsp;import com.fasterxml.jackson.annotation.JsonView;
+&nbsp;import com.jeuxolympiques.billetterie.configuration.HttpHeadersCORS;
+&nbsp;import com.jeuxolympiques.billetterie.configuration.JwtUtils;
+&nbsp;import com.jeuxolympiques.billetterie.entities.Customer;
+&nbsp;import com.jeuxolympiques.billetterie.entities.Moderator;
+&nbsp;import com.jeuxolympiques.billetterie.entities.VerificationPhoto;
+&nbsp;import com.jeuxolympiques.billetterie.entities.Views;
+&nbsp;import com.jeuxolympiques.billetterie.services.ModeratorService;
+&nbsp;import com.jeuxolympiques.billetterie.services.VerificationPhotoService;
+&nbsp;import lombok.RequiredArgsConstructor;
+&nbsp;import org.slf4j.Logger;
+&nbsp;import org.slf4j.LoggerFactory;
+&nbsp;import org.springframework.http.HttpStatus;
+&nbsp;import org.springframework.http.ResponseEntity;
+&nbsp;import org.springframework.web.bind.annotation.*;
+&nbsp;
+&nbsp;import java.io.IOException;
+&nbsp;import java.util.List;
+&nbsp;import java.util.Map;
+&nbsp;
+&nbsp;@RestController
+&nbsp;@RequestMapping(&quot;/api/moderators&quot;)
+&nbsp;@RequiredArgsConstructor
+&nbsp;@CrossOrigin(origins = &quot;${URL_FRONT}&quot;)
+&nbsp;public class ModeratorController {
+&nbsp;
+&nbsp;    private final ModeratorService moderatorService;
+&nbsp;    private final VerificationPhotoService verificationPhotoService;
+&nbsp;
+&nbsp;    private final JwtUtils jwtUtils;
+&nbsp;    private final HttpHeadersCORS httpHeaders = new HttpHeadersCORS();
+<b class="fc">&nbsp;    private static final Logger logger = LoggerFactory.getLogger(ModeratorController.class);</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Requête pour récupérer l&#39;ensemble des photos de vérification et les données correspondantes
+&nbsp;     * @param token Pour connaitre l&#39;identité du modérateur
+&nbsp;     * @return List&lt;&gt; des photos de vérification
+&nbsp;     */
+&nbsp;    @GetMapping
+&nbsp;    @JsonView(Views.Moderator.class)
+&nbsp;    ResponseEntity&lt;List&lt;VerificationPhoto&gt;&gt; getAllVerificationPhoto(@RequestHeader(name=&quot;Authorization&quot;) String token) {
+<b class="fc">&nbsp;        String username = jwtUtils.extractUsername(token.substring(7));</b>
+<b class="fc">&nbsp;        Moderator moderator = moderatorService.getModeratorByUsername(username);</b>
+&nbsp;
+<b class="fc">&nbsp;        logger.info(STR.&quot;Le modérateur \{moderator.getUsername()} est connecté sur la page de vérification des photos.&quot;);</b>
+&nbsp;
+<b class="fc">&nbsp;        return ResponseEntity.status(HttpStatus.OK).header(String.valueOf(httpHeaders.headers())).body(moderatorService.getAllVerificationPhotos());</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Requête pour valider une photo de vérification
+&nbsp;     * @param id Identifiant de la photo de vérification à valider
+&nbsp;     * @param token Pour noter l&#39;identité du modérateur qui valide l&#39;image
+&nbsp;     * @return
+&nbsp;     * @throws IOException
+&nbsp;     */
+&nbsp;    @PatchMapping(&quot;/{id}&quot;)
+&nbsp;    ResponseEntity&lt;Map&lt;String, String&gt;&gt;photoValidationById(@PathVariable String id, @RequestHeader(name=&quot;Authorization&quot;) String token) throws IOException {
+&nbsp;
+&nbsp;        // On récupère les informations par le token pour noter le modérateur qui valide la photo
+<b class="fc">&nbsp;        String username = jwtUtils.extractUsername(token.substring(7));</b>
+&nbsp;
+&nbsp;        // On récupère le client pour le log et le modérateur
+<b class="fc">&nbsp;        Customer customer = verificationPhotoService.getCustomerFromVerificationPhotoId(id);</b>
+<b class="fc">&nbsp;        Moderator moderator = moderatorService.getModeratorByUsername(username);</b>
+&nbsp;
+&nbsp;        // On crée la variable qui va recevoir la réponse
+<b class="fc">&nbsp;        Map&lt;String, String&gt; response = moderatorService.photoValidationById(id, username);</b>
+&nbsp;
+<b class="fc">&nbsp;        logger.info(STR.&quot;Le compte \{customer.getUsername()} a bien été validé pa \{moderator.getUsername()}, la photo a été supprimée.&quot;);</b>
+&nbsp;
+<b class="fc">&nbsp;        return ResponseEntity</b>
+<b class="fc">&nbsp;                .status(HttpStatus.OK)</b>
+<b class="fc">&nbsp;                .header(String.valueOf(httpHeaders.headers()))</b>
+<b class="fc">&nbsp;                .body(response);</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2025-10-10 22:19</div>
+</div>
+</body>
+</html>

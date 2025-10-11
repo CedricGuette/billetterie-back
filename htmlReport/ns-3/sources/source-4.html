@@ -1,0 +1,188 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>Coverage Report > CustomerController</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope:     <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.jeuxolympiques.billetterie.controllers</a>
+</div>
+
+<h1>Coverage Summary for Class: CustomerController (com.jeuxolympiques.billetterie.controllers)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">CustomerController</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (3/3)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (19/19)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.jeuxolympiques.billetterie.controllers;
+&nbsp;
+&nbsp;import com.fasterxml.jackson.annotation.JsonView;
+&nbsp;import com.jeuxolympiques.billetterie.configuration.HttpHeadersCORS;
+&nbsp;import com.jeuxolympiques.billetterie.configuration.JwtUtils;
+&nbsp;import com.jeuxolympiques.billetterie.entities.Customer;
+&nbsp;import com.jeuxolympiques.billetterie.entities.Event;
+&nbsp;import com.jeuxolympiques.billetterie.entities.Ticket;
+&nbsp;import com.jeuxolympiques.billetterie.entities.Views;
+&nbsp;
+&nbsp;import com.jeuxolympiques.billetterie.services.CustomerService;
+&nbsp;import com.jeuxolympiques.billetterie.services.EventService;
+&nbsp;import lombok.RequiredArgsConstructor;
+&nbsp;import org.slf4j.Logger;
+&nbsp;import org.slf4j.LoggerFactory;
+&nbsp;import org.springframework.http.HttpStatus;
+&nbsp;import org.springframework.http.ResponseEntity;
+&nbsp;import org.springframework.web.bind.annotation.*;
+&nbsp;
+&nbsp;import java.util.HashMap;
+&nbsp;import java.util.Map;
+&nbsp;
+&nbsp;@RestController
+&nbsp;@RequestMapping(&quot;/api/customers&quot;)
+&nbsp;@CrossOrigin(origins = &quot;${URL_FRONT}&quot;)
+&nbsp;@RequiredArgsConstructor
+&nbsp;public class CustomerController {
+&nbsp;
+&nbsp;    private final CustomerService customerService;
+&nbsp;    private final EventService eventService;
+&nbsp;
+&nbsp;    private final JwtUtils jwtUtils;
+&nbsp;    private final HttpHeadersCORS httpHeaders = new HttpHeadersCORS();
+<b class="fc">&nbsp;    private static final Logger logger = LoggerFactory.getLogger(CustomerController.class);</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Requête pour récupérer les informations du client connecté
+&nbsp;     * @param token Pour savoir quel client requête et lui envoyer les informations adéquates
+&nbsp;     * @return
+&nbsp;     */
+&nbsp;    @GetMapping()
+&nbsp;    @JsonView(Views.Customer.class)
+&nbsp;    public ResponseEntity&lt;Customer&gt; retrieveCustomerInfo(@RequestHeader(name=&quot;Authorization&quot;) String token) {
+&nbsp;
+&nbsp;        // On récupère l&#39;information du token pour savoir quel utilisateur est connecté
+<b class="fc">&nbsp;        String username = jwtUtils.extractUsername(token.substring(7));</b>
+<b class="fc">&nbsp;        Customer customer = customerService.getCustomerByUsername(username);</b>
+&nbsp;
+&nbsp;        // On renvoie l&#39;objet client pour remplir le profil utilisateur
+<b class="fc">&nbsp;        logger.info(STR.&quot;Le client \{customer.getUsername()} est connecté sur sa page de profil.&quot;);</b>
+&nbsp;
+<b class="fc">&nbsp;        return ResponseEntity</b>
+<b class="fc">&nbsp;                .status(HttpStatus.OK)</b>
+<b class="fc">&nbsp;                .header(String.valueOf(httpHeaders.headers()))</b>
+<b class="fc">&nbsp;                .body(customer);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Requête pour qu&#39;un client ayant déjà un compte puisse acheter un ticket pour un autre évènement
+&nbsp;     * @param token Pour connaitre l&#39;identité du client
+&nbsp;     * @param id Identifiant de l&#39;évènement du nouveau ticket
+&nbsp;     * @param ticket Information du nombre de places
+&nbsp;     * @return
+&nbsp;     */
+&nbsp;    @PostMapping(&quot;/buy/{id}&quot;)
+&nbsp;    public  ResponseEntity&lt;Map&lt;String, String&gt;&gt; customerBuyAnotherTicket(@RequestHeader(name=&quot;Authorization&quot;) String token, @PathVariable String id, @RequestBody Ticket ticket){
+&nbsp;        // On récupère l&#39;information du token pour savoir quel utilisateur est connecté
+<b class="fc">&nbsp;        String username = jwtUtils.extractUsername(token.substring(7));</b>
+<b class="fc">&nbsp;        Customer customer = customerService.getCustomerByUsername(username);</b>
+<b class="fc">&nbsp;        Event eventInDatabase = eventService.getEventById(id);</b>
+<b class="fc">&nbsp;        customerService.createNewTicket(ticket, customer, eventInDatabase);</b>
+&nbsp;
+<b class="fc">&nbsp;        Map&lt;String, String&gt; response = new HashMap&lt;&gt;();</b>
+<b class="fc">&nbsp;        response.put(&quot;created&quot;, &quot;Votre ticket a bien été créé.&quot;);</b>
+&nbsp;
+&nbsp;        // On renvoie l&#39;objet client pour remplir le profil utilisateur
+<b class="fc">&nbsp;        logger.info(STR.&quot;Le client \{customer.getUsername()} achète un ticket pour \{eventInDatabase.getName()}&quot;);</b>
+&nbsp;
+<b class="fc">&nbsp;        return ResponseEntity</b>
+<b class="fc">&nbsp;                .status(HttpStatus.OK)</b>
+<b class="fc">&nbsp;                .header(String.valueOf(httpHeaders.headers()))</b>
+<b class="fc">&nbsp;                .body(response);</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2025-10-11 09:44</div>
+</div>
+</body>
+</html>
