@@ -29,7 +29,7 @@ class TicketRepositoryTest {
     void shouldGetTicketById() {
         Ticket ticket = ticketRepository.findById("7d5303f1-99c8-4eae-8376-4d741ba268eb").get();
 
-        assertEquals(1, ticket.getEventCode());
+        //assertEquals(1, ticket.getEventCode());
         assertEquals(4, ticket.getHowManyTickets());
         assertEquals("", ticket.getQrCodeUrl());
         assertEquals("tickets/pdf/1750445253345_ticket.pdf", ticket.getTicketUrl());
@@ -45,7 +45,6 @@ class TicketRepositoryTest {
 
         ticket.setTicketIsPayed(false);
         ticket.setTicketIsUsed(false);
-        ticket.setEventCode(1);
         ticket.setHowManyTickets(2);
         ticket.setCustomer(customer);
         ticket.setTicketCreatedDate(LocalDateTime.parse("2025-06-20T20:47:33.472499"));
@@ -55,7 +54,6 @@ class TicketRepositoryTest {
         assertNotNull(savedTicket.getId());
         assertEquals(false, savedTicket.getTicketIsPayed());
         assertEquals(false, savedTicket.getTicketIsUsed());
-        assertEquals(1, savedTicket.getEventCode());
         assertEquals(2, savedTicket.getHowManyTickets());
         assertEquals(customer, savedTicket.getCustomer());
         assertEquals(LocalDateTime.parse("2025-06-20T20:47:33.472499"), savedTicket.getTicketCreatedDate());

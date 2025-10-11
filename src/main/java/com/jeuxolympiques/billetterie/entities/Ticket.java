@@ -1,5 +1,7 @@
 package com.jeuxolympiques.billetterie.entities;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonView;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -20,9 +22,6 @@ public class Ticket {
     @UuidGenerator
     @JsonView({Views.Customer.class, Views.Admin.class})
     private String id;
-
-    @JsonView({Views.Customer.class, Views.Admin.class})
-    private Integer eventCode;
 
     @JsonView({Views.Customer.class, Views.Admin.class})
     private Integer howManyTickets;
@@ -64,4 +63,9 @@ public class Ticket {
     @ManyToOne(cascade = CascadeType.ALL)
     @JoinColumn(name="customer_id")
     private Customer customer;
+
+    @JsonView({Views.Customer.class, Views.Admin.class})
+    @ManyToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "event_id")
+    private Event event;
 }

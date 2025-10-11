@@ -14,6 +14,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
@@ -23,24 +24,24 @@ import static org.mockito.Mockito.*;
 class AdminServiceTest {
 
     @Mock
-    private AdminRepository adminRepository;
+    AdminRepository adminRepository;
 
     @Mock
-    private UserRepository userRepository;
+    UserRepository userRepository;
 
     @Mock
-    private UserService userService;
+    UserService userService;
 
     @Mock
-    private PasswordEncoder passwordEncoder;
+    PasswordEncoder passwordEncoder;
 
     @InjectMocks
-    private AdminService adminService;
+    AdminService adminService;
 
     @Test
     void shouldReturnCreatedAdmin() {
-        Admin admin1 = new Admin("019d5397-0a89-485f-95e2-00451582f1cd","a@a",passwordEncoder.encode("12345"),"ROLE_ADMIN", LocalDateTime.parse("2025-06-20T16:49:39.500601"));
-        Admin admin2 = new Admin("019d5397-0a89-485f-95e2-00451582f1cd","a@a","12345","ROLE_ADMIN", LocalDateTime.parse("2025-06-20T16:49:39.500601"));
+        Admin admin1 = new Admin("019d5397-0a89-485f-95e2-00451582f1cd","a@a",passwordEncoder.encode("12345"),"ROLE_ADMIN", LocalDateTime.parse("2025-06-20T16:49:39.500601"), true);
+        Admin admin2 = new Admin("019d5397-0a89-485f-95e2-00451582f1cd","a@a","12345","ROLE_ADMIN", LocalDateTime.parse("2025-06-20T16:49:39.500601"), true);
 
         when(adminRepository.save(admin1)).thenReturn(admin1);
 
@@ -97,6 +98,31 @@ class AdminServiceTest {
         }
 
         assertThat(errorMessage).isEqualTo("Vous ne pouvez pas supprimer l'administrateur.");
+    }
+
+    @Test
+    void shouldReturnAdminById(){
+        Admin admin1 = new Admin("019d5397-0a89-485f-95e2-00451582f1cd","a@a",passwordEncoder.encode("12345"),"ROLE_ADMIN", LocalDateTime.parse("2025-06-20T16:49:39.500601"), true);
+
+        when(adminRepository.findById("019d5397-0a89-485f-95e2-00451582f1cd")).thenReturn(Optional.of(admin1));
+
+        Admin adminSearched = adminService.getAdminById("019d5397-0a89-485f-95e2-00451582f1cd");
+
+        assertThat(adminSearched).isEqualTo(admin1);
+    }
+
+    @Test
+    void shouldEditPassword(){
+        Admin admin1 = new Admin("019d5397-0a89-485f-95e2-00451582f1cd","a@a",passwordEncoder.encode("12345"),"ROLE_ADMIN", LocalDateTime.parse("2025-06-20T16:49:39.500601"), true);
+        Admin admin2 = new Admin("019d5397-0a89-485f-95e2-00451582f1cd","a@a",passwordEncoder.encode("54321"),"ROLE_ADMIN", LocalDateTime.parse("2025-06-20T16:49:39.500601"), false);
+
+        when(adminRepository.findById("019d5397-0a89-485f-95e2-00451582f1cd")).thenReturn(Optional.of(admin1));
+        when(passwordEncoder.matches("12345", passwordEncoder.encode("12345"))).thenReturn(true);
+        when(adminRepository.save(admin1)).thenReturn(admin1);
+
+        Admin adminEdited = adminService.editPassword("019d5397-0a89-485f-95e2-00451582f1cd","12345", "54321");
+
+        assertThat(adminEdited).isEqualTo(admin2);
     }
 
 }

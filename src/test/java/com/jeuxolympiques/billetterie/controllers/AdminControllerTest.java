@@ -1,6 +1,7 @@
 package com.jeuxolympiques.billetterie.controllers;
 
 import com.jeuxolympiques.billetterie.configuration.JwtUtils;
+import com.jeuxolympiques.billetterie.entities.Admin;
 import com.jeuxolympiques.billetterie.entities.Moderator;
 import com.jeuxolympiques.billetterie.entities.Security;
 import com.jeuxolympiques.billetterie.entities.User;
@@ -8,7 +9,9 @@ import com.jeuxolympiques.billetterie.services.*;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -48,6 +51,9 @@ class AdminControllerTest {
     private JwtUtils jwtUtils;
 
     @MockitoBean
+    private PasswordEncoder passwordEncoder;
+
+    @MockitoBean
     private CustomUserDetailService customUserDetailService;
 
     @Test
@@ -62,6 +68,49 @@ class AdminControllerTest {
         mockMvc.perform(get("/api/admin/users"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(2)));
+    }
+
+    @Test
+    void shouldReturnIfItsFirstLogin() throws Exception {
+        User user = new User("019d5397-0a89-485f-95e2-00451582f1cd","a@a","12345","ROLE_ADMIN", LocalDateTime.parse("2025-06-20T16:49:39.500601"));
+
+        HttpHeaders tokenBearer = new HttpHeaders();
+        tokenBearer.add("Authorization", "Bearer 12345");
+
+        when(jwtUtils.extractUsername("12345")).thenReturn("a@a");
+        when(userService.getUserByUsername("a@a")).thenReturn(user);
+        when(adminService.isFirstLogin("019d5397-0a89-485f-95e2-00451582f1cd")).thenReturn(true);
+
+        MockMvc mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
+        mockMvc.perform(get("/api/admin/firstLogin").headers(tokenBearer))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").value(true));
+    }
+
+    @Test
+    void shouldReturnChangedPasswordMessage() throws Exception {
+
+        User user = new User("019d5397-0a89-485f-95e2-00451582f1cd","a@a",passwordEncoder.encode("12345"),"ROLE_ADMIN", LocalDateTime.parse("2025-06-20T16:49:39.500601"));
+        Admin admin = new Admin("019d5397-0a89-485f-95e2-00451582f1cd","a@a",passwordEncoder.encode("12345"),"ROLE_ADMIN", LocalDateTime.parse("2025-06-20T16:49:39.500601"),true);
+        String json = """
+                {
+                "existingPassword":"12345",
+                "newPassword":"54321"
+                }
+                """;
+
+        HttpHeaders tokenBearer = new HttpHeaders();
+        tokenBearer.add("Authorization", "Bearer 12345");
+
+        when(jwtUtils.extractUsername("12345")).thenReturn("a@a");
+        when(userService.getUserByUsername("a@a")).thenReturn(user);
+        when(adminService.editPassword("019d5397-0a89-485f-95e2-00451582f1cd","12345","54321")).thenReturn(admin);
+
+
+        MockMvc mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
+        mockMvc.perform(put("/api/admin/password/change").headers(tokenBearer).contentType(MediaType.APPLICATION_JSON).content(json))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.updated").value("Le mot de passe a bien été mis à jour."));
     }
 
     @Test

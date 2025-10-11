@@ -10,7 +10,10 @@ import java.time.LocalDateTime;
 @Data
 @NoArgsConstructor
 public class Admin extends User{
-    public Admin(String id, String username, String password, String role, LocalDateTime createdDate) {
+    public Admin(String id, String username, String password, String role, LocalDateTime createdDate, Boolean firstLogin) {
         super(id, username, password, role, createdDate);
+        this.firstLogin = firstLogin;
     }
+
+    private boolean firstLogin;
 }

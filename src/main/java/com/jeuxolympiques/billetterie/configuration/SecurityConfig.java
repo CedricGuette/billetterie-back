@@ -42,7 +42,7 @@ public class SecurityConfig {
         return http
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth ->
-                        auth.requestMatchers("/api/auth/*").permitAll()
+                        auth.requestMatchers("/api/auth/*", "/api/event/**", "/uploads/event/*").permitAll()
                                 .requestMatchers("/api/stripe/checkout/*", "/api/stripe/checkout/validation/**").hasRole("USER")
                                 .requestMatchers("/api/customers/*", "/tickets/pdf/*").hasRole("USER")
                                 .requestMatchers("/uploads/*").hasRole("MODERATOR")

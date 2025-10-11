@@ -9,8 +9,12 @@ import java.security.NoSuchAlgorithmException;
 
 @Service
 public class HashService {
-    /*
-    * Methode pour transformer une chaine de caractère en hash en haxadécimal
+
+    /**
+     * Methode pour transformer une chaine de caractère en hash en haxadécimal
+     * @param input Chaine de caractère à transformer
+     * @return input hashé en hexadécimal
+     * @throws NoSuchAlgorithmException
      */
     public static byte[] getHashHexadecimal(String input) throws NoSuchAlgorithmException {
         MessageDigest messageDigest = MessageDigest.getInstance("SHA-256");
@@ -19,8 +23,11 @@ public class HashService {
         return messageDigest.digest(input.getBytes(StandardCharsets.UTF_8));
     }
 
-    /*
+
+    /**
      * Methode pour convertir le hash d'hexadécimal en chaine de caractère
+     * @param hash le hash à transformer
+     * @return le hash en entrée transformée en string
      */
     public static String fromHextoString(byte[] hash) {
         BigInteger number = new BigInteger(1, hash);
@@ -33,7 +40,12 @@ public class HashService {
         return stringFromHex.toString();
     }
 
-    // Methode simplifiée pour hasher
+    /**
+     * Methode simplifiée pour hasher
+     * @param input chaine de caractère à hasher
+     * @return input hasher sous forme de chaine de caractère
+     * @throws NoSuchAlgorithmException
+     */
     public static String toHash(String input) throws NoSuchAlgorithmException {
         return fromHextoString(getHashHexadecimal(input));
     }

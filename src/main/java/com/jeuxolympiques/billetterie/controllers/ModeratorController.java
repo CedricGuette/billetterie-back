@@ -23,6 +23,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/moderators")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "${URL_FRONT}")
 public class ModeratorController {
 
     private final ModeratorService moderatorService;
@@ -32,11 +33,12 @@ public class ModeratorController {
     private final HttpHeadersCORS httpHeaders = new HttpHeadersCORS();
     private static final Logger logger = LoggerFactory.getLogger(ModeratorController.class);
 
-    /*
-    * Requête pour récupérer l'ensemble des photos de vérifications et les données correspondantes
-    */
+    /**
+     * Requête pour récupérer l'ensemble des photos de vérification et les données correspondantes
+     * @param token Pour connaitre l'identité du modérateur
+     * @return List<> des photos de vérification
+     */
     @GetMapping
-    @CrossOrigin(origins = "http://localhost:3000")
     @JsonView(Views.Moderator.class)
     ResponseEntity<List<VerificationPhoto>> getAllVerificationPhoto(@RequestHeader(name="Authorization") String token) {
         String username = jwtUtils.extractUsername(token.substring(7));
@@ -47,11 +49,14 @@ public class ModeratorController {
         return ResponseEntity.status(HttpStatus.OK).header(String.valueOf(httpHeaders.headers())).body(moderatorService.getAllVerificationPhotos());
     }
 
-    /*
-    * Requête pour valider une photo de vérification
-    */
+    /**
+     * Requête pour valider une photo de vérification
+     * @param id Identifiant de la photo de vérification à valider
+     * @param token Pour noter l'identité du modérateur qui valide l'image
+     * @return
+     * @throws IOException
+     */
     @PatchMapping("/{id}")
-    @CrossOrigin(origins = "http://localhost:3000")
     ResponseEntity<Map<String, String>>photoValidationById(@PathVariable String id, @RequestHeader(name="Authorization") String token) throws IOException {
 
         // On récupère les informations par le token pour noter le modérateur qui valide la photo

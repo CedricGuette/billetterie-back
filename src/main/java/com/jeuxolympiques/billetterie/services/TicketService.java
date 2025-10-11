@@ -13,7 +13,10 @@ import com.itextpdf.layout.element.Image;
 import com.itextpdf.layout.element.Paragraph;
 import com.itextpdf.layout.element.Text;
 import com.jeuxolympiques.billetterie.entities.Customer;
+import com.jeuxolympiques.billetterie.entities.Event;
 import com.jeuxolympiques.billetterie.entities.Ticket;
+import com.jeuxolympiques.billetterie.exceptions.InvalidParameterException;
+import com.jeuxolympiques.billetterie.exceptions.TicketLimitReachedException;
 import com.jeuxolympiques.billetterie.exceptions.TicketNotFoundException;
 import com.jeuxolympiques.billetterie.repositories.TicketRepository;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +30,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -35,6 +39,7 @@ import java.util.UUID;
 public class TicketService {
 
     private final TicketRepository ticketRepository;
+    private final EventService eventService;
 
     // On crée la constante pour le chemin du dossier où seront contenues les qrcodes et les pdf
     private static final String GENERATOR_DIRECTORY = "tickets/";
@@ -42,9 +47,11 @@ public class TicketService {
     private static final String QR_DIRECTORY = "qrcodes/";
     private static final String PDF_DIRECTORY = "pdf/";
 
-    /*
-    * Méthode pour récupérer un ticket depuis son id
-    */
+    /**
+     * Méthode pour récupérer un ticket depuis son id
+     * @param id Identifiant du ticker cherché
+     * @return Le ticket correspondant à l'identifiant
+     */
     public Ticket getTicketById(String id) {
         Optional<Ticket> ticket = ticketRepository.findById(id);
         if(ticket.isPresent()){
@@ -53,32 +60,57 @@ public class TicketService {
         throw new TicketNotFoundException("Le ticket que vous cherchez n'a pas été trouvé.");
     }
 
-    /*
-    * Méthode pour mettre à jour les informations du ticket
-    */
+    /**
+     * Méthode pour mettre à jour les informations du ticket
+     * @param ticket Informations à mettre à jour
+     * @return Le ticket mis à jour en base de données
+     */
     public Ticket updateTicket(Ticket ticket) {
         return ticketRepository.save(ticket);
     }
 
-    /*
-     *   Methode pour formater la création d'un ticket en base de données
+    /**
+     * Methode pour formater la création d'un ticket en base de données
+     * @param ticket Informations du ticket à entrer
+     * @param customer Client lié au ticket
+     * @param event évènement lié au ticket
+     * @return Le ticket sauvegardé en base de données
      */
-    public Ticket createTicket(Ticket ticket, Customer customer) {
-        ticket.setTicketIsUsed(false);
-        ticket.setQrCodeUrl(null);
-        ticket.setTicketIsPayed(false);
-        ticket.setTicketUrl(null);
-        ticket.setSellingKey(null);
-        ticket.setTicketValidationDate(null);
-        ticket.setTicketValidationDate(null);
-        ticket.setCustomer(customer);
+    public Ticket createTicket(Ticket ticket, Customer customer, Event event) {
 
-        return ticketRepository.save(ticket);
+        if(ticket.getHowManyTickets() == 1 || ticket.getHowManyTickets() == 2 || ticket.getHowManyTickets() == 4){
+            // On vérifie qu'il reste suffisamment de places à l'évènement
+            if((event.getTickets().size() + ticket.getHowManyTickets()) < event.getAmount()) {
+                ticket.setTicketIsUsed(false);
+                ticket.setQrCodeUrl(null);
+                ticket.setTicketIsPayed(false);
+                ticket.setTicketUrl("");
+                ticket.setSellingKey(null);
+                ticket.setTicketValidationDate(null);
+                ticket.setTicketValidationDate(null);
+                ticket.setCustomer(customer);
+
+                // On met à jour le nombre de places disponibles
+                event.setTicketLeft(event.getAmount() - (event.getTickets().size() + ticket.getHowManyTickets()));
+                eventService.updateEvent(event.getId(), event);
+
+                ticket.setEvent(event);
+
+                return ticketRepository.save(ticket);
+            }
+            throw new TicketLimitReachedException("Il n'y a plus de places pour cet évènement.");
+        }
+        throw new InvalidParameterException("Le nombre de billets n'est pas correcte");
     }
 
-    /*
-    *   Methode pour valider le paiement dans la base de données
-    */
+    /**
+     * Methode pour valider le paiement dans la base de données
+     * @param id Identifiant du ticket à marquer comme payé
+     * @return Le ticket modifié en base de données
+     * @throws IOException
+     * @throws NoSuchAlgorithmException
+     * @throws WriterException
+     */
     public Ticket ticketPayed(String id) throws IOException, NoSuchAlgorithmException, WriterException {
         Ticket ticket = this.getTicketById(id);
 
@@ -92,9 +124,11 @@ public class TicketService {
         this.pdfGeneration(id);
         return ticketRepository.save(ticket);
     }
-    /*
-    * Méthode pour créer un dossier
-    */
+
+    /**
+     * Méthode pour créer un dossier
+     * @param path Chemin du dossier à créer
+     */
     private void createFolder(String path){
 
         // On vérifie si le dossier existe, sinon on le crée
@@ -104,9 +138,13 @@ public class TicketService {
         }
     }
 
-    /*
-    * Methode pour génerer un QR code avec les clefs avant de créer le pdf
-    */
+    /**
+     * Methode pour génerer un QR code avec les clefs avant de créer le pdf
+     * @param id Identifiant du ticket pour lequel on crée un QR code
+     * @throws IOException
+     * @throws WriterException
+     * @throws NoSuchAlgorithmException
+     */
     private void qrGeneration(String id) throws IOException, WriterException, NoSuchAlgorithmException {
         Ticket ticket = this.getTicketById(id);
         Customer customer = ticket.getCustomer();
@@ -141,14 +179,19 @@ public class TicketService {
 
     }
 
-    /*
-    * Méthode pour générer le pdf du ticket
-    */
+    /**
+     * Méthode pour générer le pdf du ticket
+     * @param id Identifiant du ticket pour lequel on crée le pdf
+     * @throws IOException
+     * @throws NoSuchAlgorithmException
+     * @throws WriterException
+     */
     private void pdfGeneration(String id) throws IOException, NoSuchAlgorithmException, WriterException {
         qrGeneration(id);
         Ticket ticket = this.getTicketById(id);
-
         Customer customer = ticket.getCustomer();
+        Event event = ticket.getEvent();
+
         String fileName = System.currentTimeMillis() + "_ticket.pdf";
         String documentLocation = UPLOAD_PATH + GENERATOR_DIRECTORY + PDF_DIRECTORY;
         String documentOnServer = GENERATOR_DIRECTORY + PDF_DIRECTORY;
@@ -163,11 +206,19 @@ public class TicketService {
 
         // Mise en page du PDF
         try (Document document = new Document(new PdfDocument(new PdfWriter(documentLocation + fileName)))) {
-            Text title = new Text(String.format("Ticket valable pour %d personnes.", ticket.getHowManyTickets()));
+            Text title = new Text(String.format("%s", event.getName()));
             title.setBold();
             title.setFontSize(20);
+            Text subtitle = new Text(String.format("Ticket valable pour %d personnes.", ticket.getHowManyTickets()));
+            subtitle.setBold();
+            subtitle.setFontSize(18);
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+            Text date = new Text(String.format("%s", event.getDate().format(formatter)));
+            date.setFontSize(15);
             Image image = new Image(ImageDataFactory.create(imageUrl));
             document.add(new Paragraph(title));
+            document.add(new Paragraph(subtitle));
+            document.add(new Paragraph(date));
             document.add(image);
             Text name = new Text(String.format("Nom: %S Prénom: %s",customer.getLastName(), customer.getFirstName()));
             document.add(new Paragraph(name));

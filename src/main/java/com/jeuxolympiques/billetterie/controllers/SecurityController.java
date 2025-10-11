@@ -17,6 +17,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/security")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "${URL_FRONT}")
 public class SecurityController {
 
     private final SecurityService securityService;
@@ -25,11 +26,14 @@ public class SecurityController {
     private final HttpHeadersCORS headersCORS = new HttpHeadersCORS();
     private static final Logger logger = LoggerFactory.getLogger(SecurityController.class);
 
-    /*
-    *  Requête pour vérifier et valider un ticket
-    */
+    /**
+     * Requête pour vérifier et valider un ticket
+     * @param ticketCode Chaine de caractère récupéré sur le QR code du client
+     * @param token Pour avoir l'information de quel agent de sécurité scan le code
+     * @return
+     * @throws NoSuchAlgorithmException
+     */
     @GetMapping("/{ticketCode}")
-    @CrossOrigin(origins = "http://localhost:3000")
     public ResponseEntity<Map<String, String>> isTicketValid(@PathVariable String ticketCode, @RequestHeader(name="Authorization") String token) throws NoSuchAlgorithmException {
 
         // On récupère les information de l'agent de sécurité qui scan

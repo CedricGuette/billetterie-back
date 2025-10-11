@@ -19,11 +19,13 @@ import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
+import java.util.HashMap;
 import java.util.Map;
 
 @RestController
 @RequestMapping("/api/stripe")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "${URL_FRONT}")
 public class CheckoutController {
 
     private final CustomerService customerService;
@@ -34,11 +36,14 @@ public class CheckoutController {
     private final HttpHeadersCORS httpHeaders = new HttpHeadersCORS();
     private static final Logger logger = LoggerFactory.getLogger(CheckoutController.class);
 
-    /*
-    * Requête pour lancer une session de paiement Stripe
-    */
+    /**
+     * Requête pour lancer une session de paiement Stripe
+     * @param token Pour connaitre l'utilisateur qui requête
+     * @param id Identifiant du ticket pour lequel on veut ouvrir une session de paiement
+     * @return
+     * @throws StripeException
+     */
     @PostMapping("/checkout/{id}")
-    @CrossOrigin(origins = "http://localhost:3000")
     public ResponseEntity<Map<String, String>> checkout(@RequestHeader(name="Authorization") String token, @PathVariable String id) throws StripeException {
 
         // On récupère l'information du token
@@ -61,11 +66,17 @@ public class CheckoutController {
                 .body(checkoutService.checkoutSessionStart(ticket));
     }
 
-    /*
-    * Requête pour vérifier que le paiement a bien été exécuté et donc pour lancer la conception du ticket
-    */
+    /**
+     * Requête pour vérifier que le paiement a bien été exécuté et donc pour lancer la conception du ticket
+     * @param token Pour connaitre l'utilisateur qui requête
+     * @param ticketId Identifiant du ticket concerné
+     * @return
+     * @throws StripeException
+     * @throws IOException
+     * @throws NoSuchAlgorithmException
+     * @throws WriterException
+     */
     @GetMapping("checkout/validation/{ticketId}")
-    @CrossOrigin(origins = "http://localhost:3000")
     public ResponseEntity<Map<String, String>> isCheckoutOk(@RequestHeader(name="Authorization") String token,
                                                             @PathVariable("ticketId") String ticketId) throws StripeException, IOException, NoSuchAlgorithmException, WriterException {
 

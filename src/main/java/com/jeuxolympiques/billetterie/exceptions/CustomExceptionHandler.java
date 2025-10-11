@@ -240,4 +240,79 @@ public class CustomExceptionHandler {
                 .header(String.valueOf(headersCORS.headers()))
                 .body(apiError);
     }
+
+    @ExceptionHandler(EventNotFoundException.class)
+    public ResponseEntity<ApiError> handleEventNotFoundException(EventNotFoundException e){
+        ApiError apiError = new ApiError();
+        apiError.setError(e.getMessage());
+        apiError.setCode(HttpStatus.NOT_FOUND.value());
+        apiError.setTimestamp(LocalDateTime.now());
+
+        logger.error(e.getMessage());
+
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .header(String.valueOf(headersCORS.headers()))
+                .body(apiError);
+    }
+
+    @ExceptionHandler(TicketLimitReachedException.class)
+    public ResponseEntity<ApiError> handleTicketLimitReachedException(TicketLimitReachedException e){
+        ApiError apiError = new ApiError();
+        apiError.setError(e.getMessage());
+        apiError.setCode(HttpStatus.INTERNAL_SERVER_ERROR.value());
+        apiError.setTimestamp(LocalDateTime.now());
+
+        logger.error(e.getMessage());
+
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .header(String.valueOf(headersCORS.headers()))
+                .body(apiError);
+    }
+
+    @ExceptionHandler(FileSizeException.class)
+    public ResponseEntity<ApiError> handleFileSizeException(FileSizeException e){
+        ApiError apiError = new ApiError();
+        apiError.setCode(HttpStatus.INTERNAL_SERVER_ERROR.value());
+        apiError.setError(e.getMessage());
+        apiError.setTimestamp(LocalDateTime.now());
+
+        logger.error(e.getMessage());
+
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .header(String.valueOf(headersCORS.headers()))
+                .body(apiError);
+    }
+
+    @ExceptionHandler(FileExtensionException.class)
+    public ResponseEntity<ApiError> handleFileExtensionException(FileExtensionException e){
+        ApiError apiError = new ApiError();
+        apiError.setCode(HttpStatus.INTERNAL_SERVER_ERROR.value());
+        apiError.setError(e.getMessage());
+        apiError.setTimestamp(LocalDateTime.now());
+
+        logger.error(e.getMessage());
+
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .header(String.valueOf(headersCORS.headers()))
+                .body(apiError);
+    }
+
+    @ExceptionHandler(InvalidParameterException.class)
+    public ResponseEntity<ApiError> handleInvalidParameterException(InvalidParameterException e){
+        ApiError apiError = new ApiError();
+        apiError.setCode(HttpStatus.INTERNAL_SERVER_ERROR.value());
+        apiError.setError(e.getMessage());
+        apiError.setTimestamp(LocalDateTime.now());
+
+        logger.error(e.getMessage());
+
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .header(String.valueOf(headersCORS.headers()))
+                .body(apiError);
+    }
 }

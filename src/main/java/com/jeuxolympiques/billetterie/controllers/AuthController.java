@@ -4,15 +4,11 @@ import com.fasterxml.jackson.annotation.JsonView;
 
 import com.jeuxolympiques.billetterie.configuration.HttpHeadersCORS;
 import com.jeuxolympiques.billetterie.configuration.JwtUtils;
-import com.jeuxolympiques.billetterie.entities.Admin;
-import com.jeuxolympiques.billetterie.entities.Customer;
-import com.jeuxolympiques.billetterie.entities.User;
-import com.jeuxolympiques.billetterie.entities.Views;
-import com.jeuxolympiques.billetterie.exceptions.CustomerNotCreatedException;
+import com.jeuxolympiques.billetterie.entities.*;
 import com.jeuxolympiques.billetterie.exceptions.EmailPasswordInvalidException;
-import com.jeuxolympiques.billetterie.services.AdminService;
 import com.jeuxolympiques.billetterie.services.CustomerService;
 
+import com.jeuxolympiques.billetterie.services.EventService;
 import com.jeuxolympiques.billetterie.services.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -37,12 +33,13 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "${URL_FRONT}")
 @Slf4j
 public class AuthController {
 
     private final UserService userService;
     private final CustomerService customerService;
-    private final AdminService adminService;
+    private final EventService eventService;
 
     private final JwtUtils jwtUtils;
     private final PasswordEncoder passwordEncoder;
@@ -50,17 +47,22 @@ public class AuthController {
     private final HttpHeadersCORS headersCORS = new HttpHeadersCORS();
     private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
 
-    /*
+    /**
      * Requête pour créer un compte et réserver sa place
+     * @param customer Informations du client
+     * @param event évènement du ticket pour lequel le client crée un compte
+     * @param imageFile Photo de vérification du client
+     * @return
+     * @throws IOException
      */
     @PostMapping(path = "/register", consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
-    @CrossOrigin(origins = "http://localhost:3000")
-    public ResponseEntity<Map<String, String>> register(@RequestPart Customer customer, @RequestPart("photo") MultipartFile imageFile) throws IOException {
+    public ResponseEntity<Map<String, String>> register(@RequestPart Customer customer, @RequestPart Event event, @RequestPart("photo") MultipartFile imageFile) throws IOException {
 
         // On force l'adresse mail en minuscule
         customer.setUsername(customer.getUsername().toLowerCase());
+        Event eventInDataBase = eventService.getEventById(event.getId());
 
-        Customer createdCustomer = customerService.createCustomer(customer, passwordEncoder, imageFile);
+        Customer createdCustomer = customerService.createCustomer(customer, eventInDataBase, passwordEncoder, imageFile);
 
         // On crée la réponse à renvoyer
         Map<String, String> response = new HashMap<>();
@@ -75,11 +77,12 @@ public class AuthController {
 
     }
 
-    /*
+    /**
      * Requête pour se connecter au service
+     * @param user Informations de connection
+     * @return
      */
     @PostMapping("/login")
-    @CrossOrigin(origins = "http://localhost:3000")
     public ResponseEntity<Map<String, Object>> login(@RequestBody User user) {
 
         // On force l'adresse mail en minuscule
@@ -113,11 +116,12 @@ public class AuthController {
         }
     }
 
-    /*
-    * Requête pour récupérer le niveau d'accès d'un utilisateur
-    */
+    /**
+     * Requête pour récupérer le niveau d'accès d'un utilisateur
+     * @param token Pour savoir quel utilisateur fait la requête
+     * @return
+     */
     @GetMapping("/level")
-    @CrossOrigin(origins = "http://localhost:3000")
     @JsonView(Views.UserRole.class)
     public ResponseEntity<Map<String, String>> getAuthLevel(@RequestHeader(name="Authorization") String token) {
 
@@ -135,40 +139,5 @@ public class AuthController {
                 .status(HttpStatus.OK)
                 .header(String.valueOf(headersCORS.headers()))
                 .body(response);
-    }
-
-    /*
-    * Requête pour créer un administrateur
-    */
-    @PostMapping("/createAdmin")
-    @CrossOrigin(origins = "http://localhost:3000")
-    public ResponseEntity<Map<String, String>> createAdmin(@RequestBody Admin admin) {
-
-        // Si les conditions sont remplies, on crée un admin
-        Admin createdAdmin = adminService.createAdmin(admin);
-
-        logger.info(STR."L'administrateur \{createdAdmin.getUsername()} a bien été créé.");
-
-        // On crée la réponse
-        Map<String, String> response = new HashMap<>();
-        response.put("created", "L'administrateur a bien été créé.");
-
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .header(String.valueOf(headersCORS.headers()))
-                .body(response);
-    }
-
-    /*
-    * Requête pour vérifier si un admin existe déjà ou pas pour afficher l'option de création
-    */
-    @GetMapping("/doAdminExist")
-    @CrossOrigin(origins = "http://localhost:3000")
-    public ResponseEntity<Boolean> adminExist() {
-
-        return ResponseEntity
-                .status(HttpStatus.OK)
-                .header(String.valueOf(headersCORS.headers()))
-                .body(adminService.adminExist());
     }
 }

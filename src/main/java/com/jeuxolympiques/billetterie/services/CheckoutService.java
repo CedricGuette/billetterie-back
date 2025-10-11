@@ -1,6 +1,7 @@
 package com.jeuxolympiques.billetterie.services;
 
 import com.google.zxing.WriterException;
+import com.jeuxolympiques.billetterie.entities.Event;
 import com.jeuxolympiques.billetterie.entities.Ticket;
 import com.jeuxolympiques.billetterie.exceptions.CheckoutNotPayedException;
 import com.stripe.Stripe;
@@ -33,8 +34,15 @@ public class CheckoutService {
     private String urlFront;
 
     private final TicketService ticketService;
+    private final EventService eventService;
     private final Logger logger = LoggerFactory.getLogger(CheckoutService.class);
 
+    /**
+     * Création d'une session de paiement stripe
+     * @param ticket le billet concerné par le paiement
+     * @return un Map<String, String> contenant les informations de session
+     * @throws StripeException
+     */
     public Map<String, String> checkoutSessionStart(Ticket ticket) throws StripeException {
         // On initialise Stripe avec la clef
         Stripe.apiKey = stripeSecretKey;
@@ -43,16 +51,27 @@ public class CheckoutService {
         Map<String, String> response = new HashMap<>();
         Session session;
 
+        // On récupère l'évènement pour les prix
+
+        Event event = eventService.getEventById(ticket.getEvent().getId());
+
         // On vérifie qu'il n'y a pas déjà une session de paiement ou qu'elle date d'il y a moins de 24h
         if(ticket.getSessionId() == null || ticket.getSessionCreatedDate().isAfter(ticket.getSessionCreatedDate().plusDays(1))){
 
-            int amount = switch (ticket.getHowManyTickets()) {
-                case 1 -> 5000;
-                case 2 -> 9000;
-                case 4 -> 16000;
-                default ->
-                        throw new IllegalArgumentException("Le nombre de ticket enregistré ne correspond pas au champs du possible, veuillez contacter le support.");
-            };
+            int amount;
+
+                if(ticket.getHowManyTickets() == 1){
+                    Double price = event.getSoloPrice() * 100;
+                    amount = price.intValue();
+                } else if (ticket.getHowManyTickets() == 2){
+                    Double price = event.getDuoPrice() * 100;
+                    amount = price.intValue();
+                } else if(ticket.getHowManyTickets() == 4){
+                    Double price = event.getFamilyPrice() * 100;
+                    amount = price.intValue();
+                } else {
+                    throw new IllegalArgumentException("Le nombre de ticket enregistré ne correspond pas au champs du possible, veuillez contacter le support.");
+                }
 
             // On nomme le ticket
             SessionCreateParams.LineItem.PriceData.ProductData productData = SessionCreateParams.LineItem.PriceData.ProductData.builder()
@@ -100,6 +119,15 @@ public class CheckoutService {
         return response;
     }
 
+    /**
+     * Vérifie si le billet a déjà été payé ou pas
+     * @param ticket le billet concerné par le paiement
+     * @return Map<String, String> avec la réponse
+     * @throws IOException
+     * @throws NoSuchAlgorithmException
+     * @throws WriterException
+     * @throws StripeException
+     */
     public Map<String, String> isCheckoutPayed(Ticket ticket) throws IOException, NoSuchAlgorithmException, WriterException, StripeException {
         // On initialise Stripe avec la clef
         Stripe.apiKey = stripeSecretKey;

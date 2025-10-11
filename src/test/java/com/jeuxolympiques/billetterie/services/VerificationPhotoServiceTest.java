@@ -25,6 +25,9 @@ class VerificationPhotoServiceTest {
     @Mock
     VerificationPhotoRepository verificationPhotoRepository;
 
+    @Mock
+    ImageService imageService;
+
     @InjectMocks
     VerificationPhotoService verificationPhotoService;
 
@@ -67,6 +70,7 @@ class VerificationPhotoServiceTest {
         customer1.setVerificationPhoto(verificationPhoto1);
 
         when(verificationPhotoRepository.save(verificationPhoto1)).thenReturn(verificationPhoto1);
+        when(imageService.uploadImage(file, "uploads/verification/")).thenReturn("uploads/verification/12852151_image.jpg");
 
         verificationPhoto1.setUrl(null);
         VerificationPhoto updatedVerificationPhoto = verificationPhotoService.uploadVerificationPhoto(customer1, file);
@@ -77,6 +81,16 @@ class VerificationPhotoServiceTest {
 
     @Test
     void shouldDeleteVerificationPhoto() throws IOException {
+        VerificationPhoto verificationPhoto = new VerificationPhoto("2191cfde-50eb-4d30-8eff-b978f07ebc81","src/ressources/static/uploads/1750506783231_image.jpg",null,null,null);
+        Customer customer = new Customer("43729766-67b3-47d2-80f7-6ab87e0dd0b1", "gabriel@gmail.com", "1234", "ROLE_USER",
+                LocalDateTime.parse("2025-06-20T16:51:01.867671"),"Gabriel", "Lapage", "0102030405",
+                true, "8d771743-187c-4e59-bdad-364046cd0803", verificationPhoto, null);
+        when(verificationPhotoRepository.save(verificationPhoto)).thenReturn(verificationPhoto);
+
+        VerificationPhoto deletedVerificationPhoto = verificationPhotoService.deleteVerificationPhoto(customer);
+
+        assertThat(deletedVerificationPhoto.getUrl()).isNull();
+
 
     }
 

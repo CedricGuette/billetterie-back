@@ -26,8 +26,10 @@ public class SecurityService {
 
     private final PasswordEncoder passwordEncoder;
 
-    /*
-     * Méthode pour créer un modérateur
+    /**
+     * Méthode pour créer un agent de sécurité
+     * @param security Informations de l'agent de sécurité à créer
+     * @return Agent de sécurité sauvegardé en base de données
      */
     public Security createSecurity (Security security) {
 
@@ -47,9 +49,11 @@ public class SecurityService {
         return savedSecurity;
     }
 
-    /*
-    * Méthode pour récupérer un agent de sécurité depuis son identifiant
-    */
+    /**
+     * Méthode pour récupérer un agent de sécurité depuis son identifiant
+     * @param id Identifiant de l'agent de sécurité cherché
+     * @return L'Agent de sécurité correspondant à l'identifiant
+     */
     public Security getSecurityById(String id) {
         Optional<Security> security = securityRepository.findById(id);
         if(security.isPresent()){
@@ -58,8 +62,10 @@ public class SecurityService {
         throw new UserNotFoundException("L'agent de sécurité que vous cherchez n'a pas été trouvé.");
     }
 
-    /*
+    /**
      * Méthode pour récupérer un agent de sécurité depuis son adresse e-mail
+     * @param username Nom d'utilisateur de l'agent de sécurité cherché
+     * @return L'agent de sécurité qui corresponde au nom d'utilisateur
      */
     public Security getSecurityByUsername(String username) {
         User user = userService.getUserByUsername(username);
@@ -67,9 +73,13 @@ public class SecurityService {
         return this.getSecurityById(user.getId());
     }
 
-    /*
-    * Méthode permettant de vérifier la validité du QRcode présent sur le ticket
-    */
+    /**
+     * Méthode permettant de vérifier la validité du QRcode présent sur le ticket
+     * @param qrCode Chaine de caractère récupérée via le QR code du client
+     * @param username Nom d'utilisateur de l'agent de sécurité qui valide le billet
+     * @return Un message informant sur la validité du billet
+     * @throws NoSuchAlgorithmException
+     */
     public Map<String, String> isThisTicketValid(String qrCode, String username) throws NoSuchAlgorithmException {
         Map<String, String> response = new HashMap<>();
 
@@ -87,6 +97,9 @@ public class SecurityService {
 
         // On récupère le ticket et le client qui correspondent au QR code
         Customer customer = ticket.getCustomer();
+
+        // On récupère l'évènement
+        Event event= ticket.getEvent();
 
         // On récupère les clés pour les hasher et ensuite les comparer
         String customerKey = customer.getCustomerKey();
@@ -114,7 +127,7 @@ public class SecurityService {
                 ticketService.updateTicket(ticket);
 
                 // Et on renvoie une réponse
-                response.put("validated", STR."Le ticket de \{customer.getLastName()} \{customer.getFirstName()} valable pour \{ticket.getHowManyTickets()} places est validé !");
+                response.put("validated", STR."Le ticket de \{customer.getLastName()} \{customer.getFirstName()} valable pour \{ticket.getHowManyTickets()} places pour l'évènement \{event.getName()} est validé !");
                 return response;
             }
             // le ticket a déjà été utilisé

@@ -28,9 +28,12 @@ public class ModeratorService {
     private final PasswordEncoder passwordEncoder;
 
 
-    /*
-    * Méthode pour créer un modérateur
-    */
+
+    /**
+     * Méthode pour créer un modérateur
+     * @param moderator Informations du modérateur à créer
+     * @return le modérateur sauvegardé en base de données
+     */
     public Moderator createModerator (Moderator moderator) {
 
         // On vérifie que l'adresse mail n'est pas déjà utilisée
@@ -48,9 +51,11 @@ public class ModeratorService {
 
     }
 
-    /*
-    * Méthode pour récupérer un modérateur depuis son id
-    */
+    /**
+     * Méthode pour récupérer un modérateur depuis son id
+     * @param id Identifiant du modérateur à chercher
+     * @return le modérateur corréspondant à l'identifiant
+     */
     public Moderator getModeratorById(String id) {
         Optional<Moderator> moderator = moderatorRepository.findById(id);
         if(moderator.isPresent()){
@@ -59,24 +64,31 @@ public class ModeratorService {
         throw new UserNotFoundException("Le modérateur que vous cherchez n'a pas été trouvé.");
     }
 
-    /*
-    * Méthode pour récupérer un modérateur depuis son adresse e-mail
-    */
+    /**
+     * Méthode pour récupérer un modérateur depuis son adresse e-mail
+     * @param username Nom d'utilisateur du modérateur
+     * @return Le modérateur correspondant au nom d'utilisateur
+     */
     public Moderator getModeratorByUsername(String username) {
         User user = userService.getUserByUsername(username);
 
         return this.getModeratorById(user.getId());
     }
 
-    /*
-    * Méthode pour récupérer sous forme de List<> l'ensemble des photos de vérification encore actives
-    */
+    /**
+     * Méthode pour récupérer sous forme de List<> l'ensemble des photos de vérification encore actives
+     * @return List<> de l'ensemble des photos de vérification encore actives
+     */
     public List<VerificationPhoto> getAllVerificationPhotos() {
         return verificationPhotoService.getAllVerificationPhotos();
     }
 
-    /*
+    /**
      * Méthode pour valider une photo, la supprimer du serveur, générer une clef pour le client et lui affecter
+     * @param photoId Url de la photo à traiter
+     * @param username Nom d'utilisateur du client lié à la photo
+     * @return Une réponse à renvoyer en requête pour confirmer la validation de la photo
+     * @throws IOException
      */
     public Map<String, String> photoValidationById(String photoId, String username) throws IOException {
         VerificationPhoto verificationPhoto = verificationPhotoService.getVerificationPhotoById(photoId);

@@ -20,6 +20,7 @@ import java.util.*;
 @RestController
 @RequestMapping("/api/admin")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "${URL_FRONT}")
 public class AdminController {
 
     private final UserService userService;
@@ -31,11 +32,11 @@ public class AdminController {
     private final HttpHeadersCORS headersCORS = new HttpHeadersCORS();
     private static final Logger logger = LoggerFactory.getLogger(AdminController.class);
 
-    /*
+    /**
      * On crée la requête pour récupérer la liste des utilisateurs
+     * @return ResponseEntity liste des utilisateurs
      */
     @GetMapping("/users")
-    @CrossOrigin(origins = "http://localhost:3000")
     @JsonView(Views.Admin.class)
     public ResponseEntity<List<User>> getAllUsers() {
 
@@ -47,14 +48,57 @@ public class AdminController {
                 .body(userService.getAllUsers());
     }
 
-    /*
+    /**
+     * Requête pour renvoyer l'information si l'administrateur se connecte pour la première fois
+     * @param token jeton JWT
+     * @return Booléen vrai si l'administrateur se connecte pour la première fois
+     */
+    @GetMapping("/firstLogin")
+    public ResponseEntity<Boolean> isFirstLogin(@RequestHeader(name="Authorization") String token){
+        String username = jwtUtils.extractUsername(token.substring(7));
+        User user = userService.getUserByUsername(username);
+
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .header(String.valueOf(headersCORS.headers()))
+                .body(adminService.isFirstLogin(user.getId()));
+
+    }
+
+    /**
+     * On crée la requête pour changer de mot de passe
+     * @param request objet envoyé contenant l'ancien et le nouveau mot de passe
+     * @param token jeton JWT
+     * @return ResponseEntity updated
+     */
+    @PutMapping("/password/change")
+    public ResponseEntity<Map<String, String>> editPassword(@RequestBody Map<String, String> request, @RequestHeader(name="Authorization") String token) {
+        String username = jwtUtils.extractUsername(token.substring(7));
+        User user = userService.getUserByUsername(username);
+
+        adminService.editPassword(user.getId(), request.get("existingPassword"), request.get("newPassword"));
+
+        //On crée la variable qui va recevoir la réponse
+        Map<String, String> response = new HashMap<>();
+        response.put("updated", "Le mot de passe a bien été mis à jour.");
+
+        logger.info(STR."l'administrateur' \{user.getUsername()} a changé de mot de passe avec succès.");
+
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .header(String.valueOf(headersCORS.headers()))
+                .body(response);
+    }
+
+    /**
      * On crée la requête pour créer un modérateur
+     * @param moderator nom d'utilisateur et mot de passe
+     * @return ResponseEntity created
      */
     @PostMapping("/createModerator")
-    @CrossOrigin(origins = "http://localhost:3000")
     public ResponseEntity<Map<String, String>> createModerator(@RequestBody Moderator moderator) {
 
-        //On crée la varaible qui va recevoir la réponse
+        //On crée la variable qui va recevoir la réponse
         Map<String, String> response = new HashMap<>();
         response.put("created", "Le modérateur a bien été créé.");
 
@@ -68,11 +112,12 @@ public class AdminController {
                 .body(response);
     }
 
-    /*
-    * On crée la requête pour créer un agent de sécurité
-    */
+    /**
+     * On crée la requête pour créer un agent de sécurité
+     * @param security nom d'utilisateur et mot de passe
+     * @return ResponseEntity created
+     */
     @PostMapping("/createSecurity")
-    @CrossOrigin(origins = "http://localhost:3000")
     public ResponseEntity<Map<String, String>> createSecurity(@RequestBody Security security) {
 
         securityService.createSecurity(security);
@@ -89,11 +134,12 @@ public class AdminController {
                 .body(response);
     }
 
-    /*
+    /**
      * On crée la requête pour effacer un utilisateur
+     * @param id identifiant de l'utilisateur à supprimer
+     * @return ResponseEntity deleted
      */
     @DeleteMapping("users/{id}")
-    @CrossOrigin(origins = "http://localhost:3000")
     public ResponseEntity<Map<String, String>> deleteUserById (@PathVariable String id) {
         // On récupère l'utilisateur grâce à l'id
         User user = userService.getUserById(id);

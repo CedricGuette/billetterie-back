@@ -1,9 +1,6 @@
 package com.jeuxolympiques.billetterie.services;
 
-import com.jeuxolympiques.billetterie.entities.Customer;
-import com.jeuxolympiques.billetterie.entities.Ticket;
-import com.jeuxolympiques.billetterie.entities.User;
-import com.jeuxolympiques.billetterie.entities.VerificationPhoto;
+import com.jeuxolympiques.billetterie.entities.*;
 import com.jeuxolympiques.billetterie.repositories.CustomerRepository;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -114,16 +111,6 @@ class CustomerServiceTest {
     void shouldCreateCustomer() throws IOException {
         VerificationPhoto verificationPhoto = new VerificationPhoto();
 
-        Ticket ticket = new Ticket(null,1,4,null,null,null,
-                null,null,null,null,null,null,
-                null,null,null);
-        List<Ticket> tickets = new ArrayList<>();
-        tickets.add(ticket);
-
-        Customer customer1 = new Customer("43729766-67b3-47d2-80f7-6ab87e0dd0b1", "gabriel@gmail.com", "1234", "ROLE_USER",
-                LocalDateTime.parse("2025-06-20T16:51:01.867671"),"Gabriel", "Lapage", "0102030405",
-                true, "8d771743-187c-4e59-bdad-364046cd0803", null, null);
-
         MockMultipartFile file = new MockMultipartFile(
                 "photo",
                 "image.jpg",
@@ -131,13 +118,26 @@ class CustomerServiceTest {
                 "{\"image\": \"C:\\Users\\renta\\Pictures\\image.jpg\"}".getBytes()
         );
 
+        Event event = new Event("43729766-67b3-47d2-80f7-6ab87e0d4e5b","Finale football masculin France - Espagne","Après un parcours impressionnant la France de Thierry Henry emmenée par Lacazette ainsi que l'Espagne se retrouvent en finale pour se disputer l'or pendant un match qui restera sans aucun doute dans les mémoires.",
+                LocalDateTime.now(), "/event/initial.jpeg", 44260, 44260, 50, 90, 160, null);
+
+        Ticket ticket = new Ticket(null,4,null,null,null,
+                null,null,null,null,null,null,
+                null,null,null, event);
+        List<Ticket> tickets = new ArrayList<>();
+        tickets.add(ticket);
+
+        Customer customer1 = new Customer("43729766-67b3-47d2-80f7-6ab87e0dd0b1", "gabriel@gmail.com", "1234", "ROLE_USER",
+                LocalDateTime.parse("2025-06-20T16:51:01.867671"),"Gabriel", "Lapage", "0102030405",
+                true, "8d771743-187c-4e59-bdad-364046cd0803", null, null);
+
         when(customerRepository.save(customer1)).thenReturn(customer1);
         when(userService.getUserByUsername("gabriel@gmail.com")).thenReturn(null);
 
         customer1.setVerificationPhoto(verificationPhoto);
         customer1.setTickets(tickets);
 
-        Customer customer = customerService.createCustomer(customer1, passwordEncoder, file);
+        Customer customer = customerService.createCustomer(customer1, event,passwordEncoder, file);
 
         assertThat(customer).isEqualTo(customer1);
     }
@@ -146,22 +146,25 @@ class CustomerServiceTest {
     void shouldReturnAnException() throws IOException {
         VerificationPhoto verificationPhoto = new VerificationPhoto();
 
-        Ticket ticket = new Ticket(null,1,4,null,null,null,
-                null,null,null,null,null,null,
-                null,null,null);
-        List<Ticket> tickets = new ArrayList<>();
-        tickets.add(ticket);
-
-        Customer customer1 = new Customer("43729766-67b3-47d2-80f7-6ab87e0dd0b1", "gabriel@gmail.com", "1234", "ROLE_USER",
-                LocalDateTime.parse("2025-06-20T16:51:01.867671"),"Gabriel", "Lapage", "0102030405",
-                true, "8d771743-187c-4e59-bdad-364046cd0803", null, null);
-
         MockMultipartFile file = new MockMultipartFile(
                 "photo",
                 "image.jpg",
                 MediaType.IMAGE_JPEG_VALUE,
                 "{\"image\": \"src/test/ressources/image.jpg\"}".getBytes()
         );
+
+        Event event = new Event("43729766-67b3-47d2-80f7-6ab87e0d4e5b","Finale football masculin France - Espagne.","Après un parcours impressionnant la France de Thierry Henry emmenée par Lacazette ainsi que l'Espagne se retrouvent en finale pour se disputer l'or pendant un match qui restera sans aucun doute dans les mémoires.",
+                LocalDateTime.now(), "/event/initial.jpeg", 44260, 44260, 50, 90, 160, null);
+
+        Ticket ticket = new Ticket(null,4,null,null,null,
+                null,null,null,null,null,null,
+                null,null,null, null);
+        List<Ticket> tickets = new ArrayList<>();
+        tickets.add(ticket);
+
+        Customer customer1 = new Customer("43729766-67b3-47d2-80f7-6ab87e0dd0b1", "gabriel@gmail.com", "1234", "ROLE_USER",
+                LocalDateTime.parse("2025-06-20T16:51:01.867671"),"Gabriel", "Lapage", "0102030405",
+                true, "8d771743-187c-4e59-bdad-364046cd0803", null, null);
 
         when(userService.getUserByUsername("gabriel@gmail.com")).thenReturn(customer1);
 
@@ -171,10 +174,62 @@ class CustomerServiceTest {
         String errorMessage = "";
         
         try {
-            customerService.createCustomer(customer1, passwordEncoder, file);
+            customerService.createCustomer(customer1, event,passwordEncoder, file);
         } catch (Exception e) {
             errorMessage = e.getMessage();
         }
         assertThat(errorMessage).isEqualTo("L'e-mail gabriel@gmail.com est déjà utilisé.");
+    }
+
+    @Test
+    void shouldUpdateCustomer(){
+        Customer customer = new Customer("43729766-67b3-47d2-80f7-6ab87e0dd0b1", "gabriel@gmail.com", "1234", "ROLE_USER",
+                LocalDateTime.parse("2025-06-20T16:51:01.867671"),"Gabriel", "Lapage", "0102030405",
+                true, "8d771743-187c-4e59-bdad-364046cd0803", null, null);
+
+        when(customerRepository.save(customer)).thenReturn(customer);
+
+        customer.setFirstName("George");
+        customer.setPhoneNumber("0607080910");
+
+        Customer updatedCustomer = customerService.updateCustomer(customer);
+
+        assertThat(updatedCustomer.getFirstName()).isEqualTo("George");
+        assertThat(updatedCustomer.getPhoneNumber()).isEqualTo("0607080910");
+        assertThat(updatedCustomer.getUsername()).isEqualTo("gabriel@gmail.com");
+    }
+
+    @Test
+    void shouldAddNewTicketToCustomer() {
+        Event event = new Event("43729766-67b3-47d2-80f7-6ab87e0d4e5b","Finale football masculin France - Espagne","Après un parcours impressionnant la France de Thierry Henry emmenée par Lacazette ainsi que l'Espagne se retrouvent en finale pour se disputer l'or pendant un match qui restera sans aucun doute dans les mémoires.",
+                LocalDateTime.now(), "/event/initial.jpeg", 44260, 44260, 50, 90, 160, null);
+
+        Ticket ticket = new Ticket(null,4,null,null,null,
+                null,null,null,null,null,null,
+                null,null,null, event);
+        List<Ticket> tickets = new ArrayList<>();
+        tickets.add(ticket);
+
+        Customer customer1 = new Customer("43729766-67b3-47d2-80f7-6ab87e0dd0b1", "gabriel@gmail.com", "1234", "ROLE_USER",
+                LocalDateTime.parse("2025-06-20T16:51:01.867671"),"Gabriel", "Lapage", "0102030405",
+                true, "8d771743-187c-4e59-bdad-364046cd0803", null, tickets);
+
+        Event event2 = new Event("134c0aa8-0c22-4c94-8edf-f81c333db574","Finale 400 mètres 4 nages masculin","Serez-vous présent pour voir concourir la coqueluche de ces jeux olympiques, Léon Marchand, déjà un géant malgré son jeune âge.",
+                LocalDateTime.parse("2024-07-28T20:30:00.000000"), "/uploads/event/natation.jpeg", 17000, 17000, 35, 90, 110, null);
+
+        Ticket ticket2 = new Ticket(null,4,null,null,null,
+                null,null,null,null,null,null,
+                null,null,null, null);
+
+        Ticket ticket3 = new Ticket("e78432f1-34b1-4da8-aa53-92e0850e4f2c", 4, false, false, null, null, null, null, null, null,
+                LocalDateTime.now(), null, null, customer1, event2);
+
+        when(ticketService.createTicket(ticket2, customer1, event2)).thenReturn(ticket3);
+        when(customerRepository.save(customer1)).thenReturn(customer1);
+
+        Customer ticketCreated = customerService.createNewTicket(ticket2, customer1, event2);
+
+        assertThat(ticketCreated.getTickets().size()).isEqualTo(2);
+
     }
 }

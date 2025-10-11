@@ -27,6 +27,7 @@ import java.util.List;
 @RestController
 @RequestMapping("")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "${URL_FRONT}")
 public class ResourcesOnServerController {
 
     private final ModeratorService moderatorService;
@@ -36,11 +37,13 @@ public class ResourcesOnServerController {
     private final HttpHeadersCORS headersCORS = new HttpHeadersCORS();
     private static final Logger logger = LoggerFactory.getLogger(ResourcesOnServerController.class);
 
-    /*
-    * Requête pour récupérer les photos de vérification
-    */
-    @GetMapping("/uploads/{filename}")
-    @CrossOrigin(origins = "http://localhost:3000")
+    /**
+     * Requête pour récupérer les photos de vérification
+     * @param filename Nom du fichier à récupérer sur le serveur
+     * @param token Pour vérifier l'identité du requêteur
+     * @return Le fichier demandé
+     */
+    @GetMapping("/uploads/verification/{filename}")
     public ResponseEntity<Resource> getImage(@PathVariable String filename, @RequestHeader(name="Authorization") String token) {
 
         String username = jwtUtils.extractUsername(token.substring(7));
@@ -49,10 +52,9 @@ public class ResourcesOnServerController {
         logger.info(STR."Le modérateur \{moderator.getUsername()} essaye de récupérer l'image \{filename}.");
 
         try {
-            Path filePath = Paths.get("src/main/resources/static/uploads/").resolve(filename);
+            Path filePath = Paths.get("src/main/resources/static/uploads/verification/").resolve(filename);
             Resource resource = new UrlResource(filePath.toUri());
 
-            System.out.println(filePath);
             if (resource.exists()) {
 
                 logger.info(STR."L'image \{filename} a été récupéré avec succès par le modérateur \{moderator.getUsername()}.");
@@ -74,11 +76,44 @@ public class ResourcesOnServerController {
         }
     }
 
-    /*
-    * Requête pour récupérer les tickets en PDF
-    */
+    /**
+     * Requête pour récupérer les photos des évènements
+     * @param filename Nom du fichier
+     * @return Image demandée
+     */
+    @GetMapping("/uploads/event/{filename}")
+    public ResponseEntity<Resource> getEventImage(@PathVariable String filename) {
+
+        try {
+            Path filePath = Paths.get("src/main/resources/static/uploads/event/").resolve(filename);
+            Resource resource = new UrlResource(filePath.toUri());
+
+            if (resource.exists()) {
+
+                return ResponseEntity.ok()
+                        .contentType(MediaType.IMAGE_JPEG)
+                        .header(String.valueOf(headersCORS.headers()))
+                        .body(resource);
+            } else {
+                throw new FileNotFoundException(STR."L'image \{filename} n'a pas été trouvée.");
+            }
+        } catch (MalformedURLException e) {
+            logger.error(e.getMessage());
+
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .header(String.valueOf(headersCORS.headers()))
+                    .build();
+        }
+    }
+
+    /**
+     * Requête pour récupérer les tickets en PDF
+     * @param filename Nom du fichier
+     * @param token Pour vérifier l'identité du requêteur
+     * @return Le pdf demandé
+     */
     @GetMapping("/tickets/pdf/{filename}")
-    @CrossOrigin(origins = "http://localhost:3000")
     public ResponseEntity<Resource> getPdf(@PathVariable String filename, @RequestHeader(name="Authorization") String token) {
 
         // On récupère les informations pour savoir qui veut consulter le pdf
