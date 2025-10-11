@@ -6,6 +6,14 @@
 
 ###
 
+<h2 align="left">Documentation Swagger</h2>
+
+###
+
+<p align="left">Lorsque l'application est lancée : http://localhost:8080/swagger-ui.html</p>
+
+###
+
 <h2 align="left">Réalisé avec</h2>
 
 ###

@@ -42,13 +42,13 @@ public class SecurityConfig {
         return http
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth ->
-                        auth.requestMatchers("/api/auth/*", "/api/event/**", "/uploads/event/*").permitAll()
+                        auth.requestMatchers("/api/auth/*", "/api/event/*", "/uploads/event/*", "/swagger-ui.html", "swagger-ui/**", "/v3/api-docs/**").permitAll()
                                 .requestMatchers("/api/stripe/checkout/*", "/api/stripe/checkout/validation/**").hasRole("USER")
                                 .requestMatchers("/api/customers/*", "/tickets/pdf/*").hasRole("USER")
-                                .requestMatchers("/uploads/*").hasRole("MODERATOR")
+                                .requestMatchers("/uploads/verification/*").hasRole("MODERATOR")
                                 .requestMatchers("/api/moderators/*").hasRole("MODERATOR")
                                 .requestMatchers("/api/security/*").hasRole("SECURITY")
-                                .requestMatchers("/api/admin/*").hasRole("ADMIN")
+                                .requestMatchers("/api/admin/*","/api/event/post", "/api/event/delete/*", "/api/event/update/*").hasRole("ADMIN")
                                 .anyRequest().authenticated())
                 .cors(Customizer.withDefaults())
                 .addFilterBefore(new JwtFilter(customUserDetailService, jwtUtils), UsernamePasswordAuthenticationFilter.class)

@@ -102,7 +102,7 @@ class EventControllerTest {
         );
 
         MockMvc mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
-        mockMvc.perform(multipart("/api/event")
+        mockMvc.perform(multipart("/api/event/post")
                         .file(jsonRequest)
                         .file(imageFile))
                 .andExpect(status().isCreated())

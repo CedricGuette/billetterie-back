@@ -60,7 +60,7 @@ public class EventController {
      * @return
      * @throws IOException
      */
-    @PostMapping(consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
+    @PostMapping(path = "/post",consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
     public ResponseEntity<Map<String, String>> createEvent(@RequestPart Event event, @RequestPart("image")  MultipartFile imageFile) throws IOException {
         eventService.createEvent(imageFile, event);
 
