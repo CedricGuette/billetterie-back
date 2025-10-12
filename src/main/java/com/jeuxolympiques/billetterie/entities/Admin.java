@@ -1,5 +1,6 @@
 package com.jeuxolympiques.billetterie.entities;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -16,5 +17,6 @@ public class Admin extends User{
         this.firstLogin = firstLogin;
     }
 
-    private boolean firstLogin = true;
+    @Column(columnDefinition = "boolean default true")
+    private boolean firstLogin;
 }
