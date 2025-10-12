@@ -16,5 +16,5 @@ public class Admin extends User{
         this.firstLogin = firstLogin;
     }
 
-    private boolean firstLogin;
+    private boolean firstLogin = true;
 }
