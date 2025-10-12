@@ -24,7 +24,7 @@ import static org.mockito.Mockito.when;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
-class EventServiceTest {
+public class EventServiceTest {
 
     @Mock
     EventRepository eventRepository;

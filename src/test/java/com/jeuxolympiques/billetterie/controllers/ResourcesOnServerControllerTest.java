@@ -1,6 +1,6 @@
 package com.jeuxolympiques.billetterie.controllers;
 
 
-class ResourcesOnServerControllerTest {
+public class ResourcesOnServerControllerTest {
 
 }

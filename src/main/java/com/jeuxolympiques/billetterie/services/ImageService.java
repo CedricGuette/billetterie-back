@@ -36,7 +36,7 @@ public class ImageService {
             }
 
             // On vérifie la taille de l'image
-            if(imageFile.getSize() > 2097152){
+            if(imageFile.getSize() > 20971520){
                 throw new FileSizeException("Le fichier image est trop volumineux.");
             }
 

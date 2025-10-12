@@ -2,6 +2,7 @@ package com.jeuxolympiques.billetterie.entities;
 
 import jakarta.persistence.Entity;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;

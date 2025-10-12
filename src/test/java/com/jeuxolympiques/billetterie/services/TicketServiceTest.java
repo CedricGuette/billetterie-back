@@ -22,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.when;
 
 @SpringBootTest
-class TicketServiceTest {
+public class TicketServiceTest {
 
     @Mock
     TicketRepository ticketRepository;

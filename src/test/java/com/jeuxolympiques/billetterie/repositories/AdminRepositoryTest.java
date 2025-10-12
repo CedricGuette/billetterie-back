@@ -13,7 +13,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 
 @DataJpaTest
-class AdminRepositoryTest {
+public class AdminRepositoryTest {
 
     @Autowired
     private AdminRepository adminRepository;

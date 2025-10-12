@@ -19,7 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
 @SpringBootTest
-class CustomerServiceTest {
+public class CustomerServiceTest {
 
     @Autowired
     private PasswordEncoder passwordEncoder;

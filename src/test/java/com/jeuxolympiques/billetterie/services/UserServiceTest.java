@@ -19,7 +19,7 @@ import java.util.Optional;
 
 
 @SpringBootTest
-class UserServiceTest {
+public class UserServiceTest {
 
     @Mock
     private UserRepository userRepository;

@@ -11,7 +11,7 @@ import java.security.NoSuchAlgorithmException;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
-class HashServiceTest {
+public class HashServiceTest {
 
 
     @Test

@@ -3,6 +3,7 @@ package com.jeuxolympiques.billetterie.configuration;
 import com.jeuxolympiques.billetterie.filter.JwtFilter;
 import com.jeuxolympiques.billetterie.services.CustomUserDetailService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -21,7 +22,9 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final CustomUserDetailService customUserDetailService;
+    @Autowired
+    CustomUserDetailService customUserDetailService;
+
     private final JwtUtils jwtUtils;
 
     @Bean
@@ -42,7 +45,7 @@ public class SecurityConfig {
         return http
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth ->
-                        auth.requestMatchers("/api/auth/*", "/api/event/*", "/uploads/event/*", "/swagger-ui.html", "swagger-ui/**", "/v3/api-docs/**").permitAll()
+                        auth.requestMatchers("/api/auth/*", "/api/event", "/uploads/event/*", "/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
                                 .requestMatchers("/api/stripe/checkout/*", "/api/stripe/checkout/validation/**").hasRole("USER")
                                 .requestMatchers("/api/customers/*", "/tickets/pdf/*").hasRole("USER")
                                 .requestMatchers("/uploads/verification/*").hasRole("MODERATOR")

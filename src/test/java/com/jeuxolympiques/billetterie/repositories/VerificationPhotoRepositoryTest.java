@@ -13,7 +13,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 
 @DataJpaTest
-class VerificationPhotoRepositoryTest {
+public class VerificationPhotoRepositoryTest {
 
     @Autowired
     private VerificationPhotoRepository verificationPhotoRepository;

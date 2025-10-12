@@ -23,7 +23,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(SecurityController.class)
-class SecurityControllerTest {
+public class SecurityControllerTest {
 
     @Autowired
     WebApplicationContext webApplicationContext;

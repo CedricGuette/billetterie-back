@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.when;
 
 @SpringBootTest
-class VerificationPhotoServiceTest {
+public class VerificationPhotoServiceTest {
 
     @Mock
     VerificationPhotoRepository verificationPhotoRepository;

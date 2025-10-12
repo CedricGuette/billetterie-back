@@ -29,7 +29,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.junit.jupiter.api.Assertions.*;
 
 @WebMvcTest(EventController.class)
-class EventControllerTest {
+public class EventControllerTest {
 
     @Autowired
     WebApplicationContext webApplicationContext;

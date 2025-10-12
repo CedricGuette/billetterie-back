@@ -28,7 +28,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(CustomerController.class)
-class CustomerControllerTest {
+public class CustomerControllerTest {
 
     @Autowired
     WebApplicationContext webApplicationContext;

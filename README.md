@@ -2,7 +2,7 @@
 
 ###
 
-<p align="left">Ce projet a pour but de mettre en application les concepts de bases et intermédiaire de Spring boot.<br>Pour commencer il faut créer des variables d'environnement (.env) avec les paramètres qui suivent:<br><br><br>#URL du front de l'application<br>URL_FRONT=<br><br>#Données relative à la base de données MySQL que vous allez utiliser<br>DATABASE_URL=<br>DATABASE_USERNAME=<br>DATABASE_PASSWORD=<br><br>#Clé qui sert pour les token de session (vous pouvez y mettre n'importe quoi)<br>SECRET_KEY=<br><br>#Clés de l'API Stripe pour simuler les paiement en mode test<br>STRIPE_PUBLIC_KEY=<br>STRIPE_SECRET_KEY=<br><br>#Identifiant et mot de passe de l'administrateur <br>ADMIN_USERNAME=<br>ADMIN_PASSWORD=</p>
+<p align="left">Ce projet a pour but de mettre en application les concepts de bases et intermédiaire de Spring boot.<br>Pour commencer il faut créer des variables d'environnement (.env) avec les paramètres qui suivent:<br><br><br>#URL du front de l'application<br>URL_FRONT=<br><br>#Données relative à la base de données MySQL que vous allez utiliser<br>DATABASE_URL=<br>DATABASE_USERNAME=<br>DATABASE_PASSWORD=<br><br>#Clé qui sert pour les token de session (vous pouvez y mettre n'importe quoi)<br>SECRET_KEY=<br><br>#Clés de l'API Stripe pour simuler les paiement en mode test<br>STRIPE_SECRET_KEY=<br><br>#Identifiant et mot de passe de l'administrateur <br>ADMIN_USERNAME=<br>ADMIN_PASSWORD=</p>
 
 ###
 
@@ -10,7 +10,7 @@
 
 ###
 
-<p align="left">Lorsque l'application est lancée : http://localhost:8080/swagger-ui.html</p>
+<p align="left">Lorsque l'application est lancée : http://localhost:8081/swagger-ui.html</p>
 
 ###
 

@@ -2,9 +2,11 @@ package com.jeuxolympiques.billetterie;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 
 @SpringBootTest
-class BilletterieApplicationTests {
+@ActiveProfiles({"local"})
+public class BilletterieApplicationTests {
 
 	@Test
 	void contextLoads() {
